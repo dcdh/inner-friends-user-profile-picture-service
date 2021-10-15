@@ -1,0 +1,23 @@
+version: '3'
+
+services:
+
+  zenko:
+    image: zenko/cloudserver:8.2.7
+    ports:
+      - 8000:8000
+    environment:
+      - SCALITY_ACCESS_KEY_ID=test-key
+      - SCALITY_SECRET_ACCESS_KEY=test-secret
+      - S3BACKEND=mem
+      - ENDPOINT=zenko
+
+  inner-friends-user-profile-picture-service:
+    image: damdamdeo/inner-friends-user-profile-picture-service
+    ports:
+      - 8080:8080
+    environment:
+      - quarkus.s3.endpoint-override=http://zenko:8000
+    depends_on:
+      - zenko
+    restart: unless-stopped
