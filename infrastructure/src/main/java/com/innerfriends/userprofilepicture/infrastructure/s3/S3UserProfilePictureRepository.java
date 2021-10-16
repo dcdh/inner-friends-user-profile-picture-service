@@ -1,17 +1,15 @@
 package com.innerfriends.userprofilepicture.infrastructure.s3;
 
-import com.innerfriends.userprofilepicture.domain.NewUserProfilePicture;
-import com.innerfriends.userprofilepicture.domain.UserProfilePictureRepository;
-import com.innerfriends.userprofilepicture.domain.UserProfilePictureRepositoryException;
-import com.innerfriends.userprofilepicture.domain.UserProfilePictureSaved;
+import com.innerfriends.userprofilepicture.domain.*;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-import software.amazon.awssdk.services.s3.model.PutObjectResponse;
+import software.amazon.awssdk.services.s3.model.*;
 
 import javax.enterprise.context.ApplicationScoped;
 import java.util.Objects;
@@ -49,6 +47,27 @@ public class S3UserProfilePictureRepository implements UserProfilePictureReposit
                     putObjectResponse);
         } catch (final SdkException sdkException) {
             logger.error("Unable to store new user profile picture for user " + newUserProfilePicture.userPseudo(), sdkException);
+            throw new UserProfilePictureRepositoryException();
+        }
+    }
+
+    // TODO span interceptor
+    @Override
+    public ContentUserProfilePicture getContent(final UserProfilePictureIdentifier userProfilePictureIdentifier)
+            throws UserProfilePictureUnknownException, UserProfilePictureRepositoryException {
+        final GetObjectRequest getObjectRequest = GetObjectRequest.builder().bucket(bucketUserProfilePictureName)
+                .key(s3ObjectKeyProvider.objectKey(userProfilePictureIdentifier.userPseudo(), userProfilePictureIdentifier.mediaType()).key())
+                .versionId(userProfilePictureIdentifier.versionId().version())
+                .build();
+        try {
+            final ResponseBytes<GetObjectResponse> getObjectResponse = s3Client.getObject(getObjectRequest, ResponseTransformer.toBytes());
+            return new S3ContentUserProfilePicture(userProfilePictureIdentifier.userPseudo(), getObjectResponse);
+        } catch (final NoSuchKeyException noSuchKeyException) {
+            throw  new UserProfilePictureUnknownException(userProfilePictureIdentifier);
+        } catch (final SdkException sdkException) {
+            if (sdkException.getMessage().startsWith("Invalid version id specified")) {
+                throw  new UserProfilePictureUnknownException(userProfilePictureIdentifier);
+            }
             throw new UserProfilePictureRepositoryException();
         }
     }

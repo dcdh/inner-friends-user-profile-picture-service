@@ -48,6 +48,23 @@ public class E2ETest {
         assertThat(objectVersions.size()).isEqualTo(1);
     }
 
+    @Test
+    @Order(5)
+    public void should_download_user_profile_picture_by_version_id() throws Exception {
+        final String versionId = s3Client.listObjectVersions(ListObjectVersionsRequest
+                .builder()
+                .bucket(bucketUserProfilePictureName)
+                .prefix("pseudoE2E.jpeg")
+                .build()).versions().stream().map(ObjectVersion::versionId)
+                .findFirst().get();
+        given()
+                .contentType("image/jpeg; charset=ISO-8859-1")
+                .when()
+                .get("/users/pseudoE2E/version/{versionId}/content", versionId)
+                .then()
+                .statusCode(200);
+    }
+
     private File getFileFromResource(final String fileName) throws Exception {
         final ClassLoader classLoader = getClass().getClassLoader();
         final URL resource = classLoader.getResource(fileName);

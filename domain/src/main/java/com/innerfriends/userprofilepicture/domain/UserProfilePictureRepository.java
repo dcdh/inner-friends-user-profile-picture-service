@@ -4,4 +4,6 @@ public interface UserProfilePictureRepository {
 
     UserProfilePictureSaved storeNewUserProfilePicture(NewUserProfilePicture newUserProfilePicture) throws UserProfilePictureRepositoryException;
 
+    ContentUserProfilePicture getContent(UserProfilePictureIdentifier userProfilePictureIdentifier) throws UserProfilePictureUnknownException, UserProfilePictureRepositoryException;
+
 }
