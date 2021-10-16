@@ -8,7 +8,10 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.*;
 
@@ -21,6 +24,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @QuarkusTest
+@ExtendWith(MockitoExtension.class)
 public class S3UserProfilePictureRepositoryTest {
 
     @Inject
@@ -103,7 +107,6 @@ public class S3UserProfilePictureRepositoryTest {
         assertThat(objectVersions.get(0).versionId()).isEqualTo(userProfilePictureSaved.versionId().version());
         assertThat(objectVersions.get(0).key()).isEqualTo("userPseudo.jpeg");
 
-        verify(s3ObjectKeyProvider, times(1)).objectKey(any(), any());
         verify(s3Client, times(1)).putObject(any(PutObjectRequest.class), any(RequestBody.class));
     }
 
@@ -153,8 +156,90 @@ public class S3UserProfilePictureRepositoryTest {
                 .build()).versions();
         assertThat(objectVersions.size()).isEqualTo(0);
 
-        verify(s3ObjectKeyProvider, times(1)).objectKey(any(), any());
         verify(s3Client, times(1)).putObject(any(PutObjectRequest.class), any(RequestBody.class));
+    }
+
+    private static class TestUserProfilePictureIdentifier implements UserProfilePictureIdentifier {
+
+        private final String versionId;
+
+        public TestUserProfilePictureIdentifier(final String versionId) {
+            this.versionId = versionId;
+        }
+
+        @Override
+        public UserPseudo userPseudo() {
+            return () -> "userPseudo";
+        }
+
+        @Override
+        public SupportedMediaType mediaType() {
+            return SupportedMediaType.IMAGE_JPEG;
+        }
+
+        @Override
+        public VersionId versionId() {
+            return () -> versionId;
+        }
+    }
+
+    @Test
+    public void should_get_content() throws Exception {
+        // Given
+        final PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+                .bucket(bucketUserProfilePictureName)
+                .key("userPseudo.jpeg")
+                .contentType("image/jpeg")
+                .build();
+        final String versionId = s3Client.putObject(putObjectRequest, RequestBody.fromBytes("picture".getBytes())).versionId();
+        final TestUserProfilePictureIdentifier testProfilePictureIdentifier = new TestUserProfilePictureIdentifier(versionId);
+        doReturn(new S3ObjectKey(testProfilePictureIdentifier.userPseudo(), testProfilePictureIdentifier.mediaType()))
+                .when(s3ObjectKeyProvider).objectKey(testProfilePictureIdentifier.userPseudo(), testProfilePictureIdentifier.mediaType());
+
+        // When
+        final ContentUserProfilePicture contentUserProfilePicture = s3UserProfilePictureRepository.getContent(new TestUserProfilePictureIdentifier(versionId));
+
+        // Then
+        assertThat(contentUserProfilePicture.userPseudo().pseudo()).isEqualTo("userPseudo");
+        assertThat(contentUserProfilePicture.picture()).isEqualTo("picture".getBytes());
+        assertThat(contentUserProfilePicture.mediaType()).isEqualTo(SupportedMediaType.IMAGE_JPEG);
+        assertThat(contentUserProfilePicture.contentLength()).isEqualTo(7l);
+        assertThat(contentUserProfilePicture.versionId().version()).isEqualTo(versionId);
+        verify(s3Client, times(1)).getObject(any(GetObjectRequest.class), any(ResponseTransformer.class));
+    }
+
+    @Test
+    public void should_get_content_throw_user_profile_picture_unknown_exception_when_user_profile_picture_not_found() {
+        // Given
+        final UserProfilePictureIdentifier userProfilePictureIdentifier = mock(UserProfilePictureIdentifier.class);
+        final UserPseudo userPseudo = mock(UserPseudo.class);
+        doReturn(new S3VersionId("v0")).when(userProfilePictureIdentifier).versionId();
+        doReturn(userPseudo).when(userProfilePictureIdentifier).userPseudo();
+        doReturn(SupportedMediaType.IMAGE_JPEG).when(userProfilePictureIdentifier).mediaType();
+        doReturn(new S3ObjectKey(userPseudo, SupportedMediaType.IMAGE_JPEG))
+                .when(s3ObjectKeyProvider).objectKey(userPseudo, SupportedMediaType.IMAGE_JPEG);
+
+        // When && Then
+        assertThatThrownBy(() -> s3UserProfilePictureRepository.getContent(userProfilePictureIdentifier))
+                .isInstanceOf(UserProfilePictureUnknownException.class);
+        verify(s3Client, times(1)).getObject(any(GetObjectRequest.class), any(ResponseTransformer.class));
+    }
+
+    @Test
+    public void should_get_content_return_profile_picture_repository_exception_when_s3_object_key_is_invalid() {
+        // Given
+        final UserProfilePictureIdentifier userProfilePictureIdentifier = mock(UserProfilePictureIdentifier.class);
+        final UserPseudo userPseudo = mock(UserPseudo.class);
+        doReturn(new S3VersionId("v0")).when(userProfilePictureIdentifier).versionId();
+        doReturn(userPseudo).when(userProfilePictureIdentifier).userPseudo();
+        doReturn(SupportedMediaType.IMAGE_JPEG).when(userProfilePictureIdentifier).mediaType();
+        doReturn((ObjectKey) () -> null)
+                .when(s3ObjectKeyProvider).objectKey(userPseudo, SupportedMediaType.IMAGE_JPEG);
+
+        // When && Then
+        assertThatThrownBy(() -> s3UserProfilePictureRepository.getContent(userProfilePictureIdentifier))
+                .isInstanceOf(UserProfilePictureRepositoryException.class);
+        verify(s3Client, times(1)).getObject(any(GetObjectRequest.class), any(ResponseTransformer.class));
     }
 
 }
