@@ -4,14 +4,17 @@ import com.innerfriends.userprofilepicture.domain.ContentUserProfilePicture;
 import com.innerfriends.userprofilepicture.domain.SupportedMediaType;
 import com.innerfriends.userprofilepicture.domain.UserProfilePicture;
 import com.innerfriends.userprofilepicture.domain.usecase.GetContentUserProfilePictureCommand;
+import com.innerfriends.userprofilepicture.domain.usecase.ListUserProfilPicturesCommand;
 import com.innerfriends.userprofilepicture.domain.usecase.StoreNewUserProfilePictureCommand;
 import com.innerfriends.userprofilepicture.infrastructure.usecase.ManagedGetContentUserProfilePictureUseCase;
+import com.innerfriends.userprofilepicture.infrastructure.usecase.ManagedListUserProfilPicturesUseCase;
 import com.innerfriends.userprofilepicture.infrastructure.usecase.ManagedStoreNewUserProfilePictureUseCase;
 import org.jboss.resteasy.annotations.providers.multipart.MultipartForm;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.util.List;
 import java.util.Objects;
 
 @Path("/users")
@@ -19,11 +22,14 @@ public class UserProfilePictureEndpoint {
 
     private final ManagedStoreNewUserProfilePictureUseCase managedStoreNewUserProfilePictureUseCase;
     private final ManagedGetContentUserProfilePictureUseCase managedGetContentUserProfilePictureUseCase;
+    private final ManagedListUserProfilPicturesUseCase managedListUserProfilPicturesUseCase;
 
     public UserProfilePictureEndpoint(final ManagedStoreNewUserProfilePictureUseCase managedStoreNewUserProfilePictureUseCase,
-                                      final ManagedGetContentUserProfilePictureUseCase managedGetContentUserProfilePictureUseCase) {
+                                      final ManagedGetContentUserProfilePictureUseCase managedGetContentUserProfilePictureUseCase,
+                                      final ManagedListUserProfilPicturesUseCase managedListUserProfilPicturesUseCase) {
         this.managedStoreNewUserProfilePictureUseCase = Objects.requireNonNull(managedStoreNewUserProfilePictureUseCase);
         this.managedGetContentUserProfilePictureUseCase = Objects.requireNonNull(managedGetContentUserProfilePictureUseCase);
+        this.managedListUserProfilPicturesUseCase = Objects.requireNonNull(managedListUserProfilPicturesUseCase);
     }
 
     @POST
@@ -58,6 +64,18 @@ public class UserProfilePictureEndpoint {
                 .header("Content-Type", contentUserProfilePicture.mediaType().contentType())
                 .header("Content-Length", contentUserProfilePicture.contentLength())
                 .header("versionId", contentUserProfilePicture.versionId().version())
+                .build();
+    }
+
+    @GET
+    @Consumes("image/jpeg")
+    @Path("/{userPseudo}")
+    public Response listUserProfilePictures(@PathParam("userPseudo") final String userPseudo) {
+        final List<? extends UserProfilePicture> userProfilePictures = managedListUserProfilPicturesUseCase.execute(
+                new ListUserProfilPicturesCommand(
+                        new JaxRsUserPseudo(userPseudo),
+                        SupportedMediaType.IMAGE_JPEG));
+        return Response.ok(new UserProfilePicturesDTO(userProfilePictures))
                 .build();
     }
 

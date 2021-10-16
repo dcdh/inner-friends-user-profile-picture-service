@@ -12,7 +12,9 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.*;
 
 import javax.enterprise.context.ApplicationScoped;
+import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class S3UserProfilePictureRepository implements UserProfilePictureRepository {
@@ -70,6 +72,21 @@ public class S3UserProfilePictureRepository implements UserProfilePictureReposit
             }
             throw new UserProfilePictureRepositoryException();
         }
+    }
+
+    // TODO span interceptor
+    @Override
+    public List<? extends UserProfilePicture> listByUserPseudoAndMediaType(final UserPseudo userPseudo, final SupportedMediaType mediaType)
+            throws UserProfilePictureRepositoryException {
+        final ListObjectVersionsRequest listObjectVersionsRequest = ListObjectVersionsRequest.builder()
+                .bucket(bucketUserProfilePictureName)
+                .prefix(s3ObjectKeyProvider.objectKey(userPseudo, mediaType).key())
+                .build();
+        final ListObjectVersionsResponse listObjectVersionsResponse = s3Client.listObjectVersions(listObjectVersionsRequest);
+        return listObjectVersionsResponse.versions()
+                .stream()
+                .map(objectVersion -> new S3UserProfilePicture(userPseudo, mediaType, objectVersion))
+                .collect(Collectors.toList());
     }
 
 }

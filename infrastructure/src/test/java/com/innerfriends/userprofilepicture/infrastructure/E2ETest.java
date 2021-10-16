@@ -49,7 +49,7 @@ public class E2ETest {
     }
 
     @Test
-    @Order(5)
+    @Order(1)
     public void should_download_user_profile_picture_by_version_id() throws Exception {
         final String versionId = s3Client.listObjectVersions(ListObjectVersionsRequest
                 .builder()
@@ -61,6 +61,17 @@ public class E2ETest {
                 .contentType("image/jpeg; charset=ISO-8859-1")
                 .when()
                 .get("/users/pseudoE2E/version/{versionId}/content", versionId)
+                .then()
+                .statusCode(200);
+    }
+
+    @Test
+    @Order(2)
+    public void should_list_user_profile_pictures() throws Exception {
+        given()
+                .header("Content-Type", "image/jpeg")
+                .when()
+                .get("/users/pseudoE2E")
                 .then()
                 .statusCode(200);
     }

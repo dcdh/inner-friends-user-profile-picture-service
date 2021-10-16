@@ -57,6 +57,7 @@ public class S3UserProfilePictureRepositoryTest {
                                     .build()).build())
                     .build());
         });
+        reset(s3Client);
     }
 
     public static final class TestNewUserProfilePicture implements NewUserProfilePicture {
@@ -240,6 +241,30 @@ public class S3UserProfilePictureRepositoryTest {
         assertThatThrownBy(() -> s3UserProfilePictureRepository.getContent(userProfilePictureIdentifier))
                 .isInstanceOf(UserProfilePictureRepositoryException.class);
         verify(s3Client, times(1)).getObject(any(GetObjectRequest.class), any(ResponseTransformer.class));
+    }
+
+    @Test
+    public void should_list_by_user_pseudo_and_media_type() throws Exception {
+        // Given
+        final UserPseudo userPseudo = () -> "user";
+        doReturn(new S3ObjectKey(userPseudo, SupportedMediaType.IMAGE_JPEG))
+                .when(s3ObjectKeyProvider).objectKey(userPseudo, SupportedMediaType.IMAGE_JPEG);
+        final PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+                .bucket(bucketUserProfilePictureName)
+                .key("user.jpeg")
+                .contentType("image/jpeg")
+                .build();
+        final String versionId = s3Client.putObject(putObjectRequest, RequestBody.fromBytes("picture".getBytes())).versionId();
+
+        // When
+        final List<? extends UserProfilePicture> userProfilePictures = s3UserProfilePictureRepository.listByUserPseudoAndMediaType(userPseudo, SupportedMediaType.IMAGE_JPEG);
+
+        // Then
+        assertThat(userProfilePictures.size()).isEqualTo(1);
+        assertThat(userProfilePictures.get(0).userPseudo().pseudo()).isEqualTo("user");
+        assertThat(userProfilePictures.get(0).mediaType()).isEqualTo(SupportedMediaType.IMAGE_JPEG);
+        assertThat(userProfilePictures.get(0).versionId().version()).isEqualTo(versionId);
+        verify(s3Client, times(1)).listObjectVersions(any(ListObjectVersionsRequest.class));
     }
 
 }

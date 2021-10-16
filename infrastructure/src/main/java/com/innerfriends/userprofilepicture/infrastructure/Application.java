@@ -2,6 +2,7 @@ package com.innerfriends.userprofilepicture.infrastructure;
 
 import com.innerfriends.userprofilepicture.domain.UserProfilePictureRepository;
 import com.innerfriends.userprofilepicture.domain.usecase.GetContentUserProfilePictureUseCase;
+import com.innerfriends.userprofilepicture.domain.usecase.ListUserProfilPicturesUseCase;
 import com.innerfriends.userprofilepicture.domain.usecase.StoreNewUserProfilePictureUseCase;
 import com.innerfriends.userprofilepicture.infrastructure.s3.S3ObjectKey;
 import com.innerfriends.userprofilepicture.infrastructure.s3.S3ObjectKeyProvider;
@@ -21,6 +22,12 @@ public class Application {
     @ApplicationScoped
     public GetContentUserProfilePictureUseCase getContentUserProfilePictureUseCaseProducer(final UserProfilePictureRepository userProfilePictureRepository) {
         return new GetContentUserProfilePictureUseCase(userProfilePictureRepository);
+    }
+
+    @Produces
+    @ApplicationScoped
+    public ListUserProfilPicturesUseCase listUserProfilPicturesUseCaseProducer(final UserProfilePictureRepository userProfilePictureRepository) {
+        return new ListUserProfilPicturesUseCase(userProfilePictureRepository);
     }
 
     @ApplicationScoped
