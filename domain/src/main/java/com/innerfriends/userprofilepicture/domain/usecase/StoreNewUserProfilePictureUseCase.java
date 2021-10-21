@@ -2,11 +2,10 @@ package com.innerfriends.userprofilepicture.domain.usecase;
 
 import com.innerfriends.userprofilepicture.domain.UseCase;
 import com.innerfriends.userprofilepicture.domain.UserProfilePictureRepository;
-import com.innerfriends.userprofilepicture.domain.UserProfilePictureSaved;
 
 import java.util.Objects;
 
-public class StoreNewUserProfilePictureUseCase implements UseCase<UserProfilePictureSaved, StoreNewUserProfilePictureCommand> {
+public class StoreNewUserProfilePictureUseCase implements UseCase<Void, StoreNewUserProfilePictureCommand> {
 
     private final UserProfilePictureRepository userProfilePictureRepository;
 
@@ -15,8 +14,9 @@ public class StoreNewUserProfilePictureUseCase implements UseCase<UserProfilePic
     }
 
     @Override
-    public UserProfilePictureSaved execute(final StoreNewUserProfilePictureCommand command) {
-        return userProfilePictureRepository.storeNewUserProfilePicture(command);
+    public Void execute(final StoreNewUserProfilePictureCommand command) {
+        userProfilePictureRepository.storeNewUserProfilePicture(command);
+        return null;
     }
 
 }

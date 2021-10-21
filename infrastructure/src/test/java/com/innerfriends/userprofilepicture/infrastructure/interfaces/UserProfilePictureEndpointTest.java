@@ -3,9 +3,11 @@ package com.innerfriends.userprofilepicture.infrastructure.interfaces;
 import com.innerfriends.userprofilepicture.domain.*;
 import com.innerfriends.userprofilepicture.domain.usecase.GetContentUserProfilePictureCommand;
 import com.innerfriends.userprofilepicture.domain.usecase.ListUserProfilPicturesCommand;
+import com.innerfriends.userprofilepicture.domain.usecase.MarkUserProfilePictureAsFeaturedCommand;
 import com.innerfriends.userprofilepicture.domain.usecase.StoreNewUserProfilePictureCommand;
 import com.innerfriends.userprofilepicture.infrastructure.usecase.ManagedGetContentUserProfilePictureUseCase;
 import com.innerfriends.userprofilepicture.infrastructure.usecase.ManagedListUserProfilPicturesUseCase;
+import com.innerfriends.userprofilepicture.infrastructure.usecase.ManagedMarkUserProfilePictureAsFeaturedUseCase;
 import com.innerfriends.userprofilepicture.infrastructure.usecase.ManagedStoreNewUserProfilePictureUseCase;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
@@ -37,34 +39,12 @@ public class UserProfilePictureEndpointTest {
     @InjectMock
     ManagedListUserProfilPicturesUseCase managedListUserProfilPicturesUseCase;
 
-    public static class TestUserProfilePictureSaved implements UserProfilePictureSaved {
-
-        @Override
-        public UserPseudo userPseudo() {
-            return () -> "userPseudo";
-        }
-
-        @Override
-        public SupportedMediaType mediaType() {
-            return SupportedMediaType.IMAGE_JPEG;
-        }
-
-        @Override
-        public VersionId versionId() {
-            return () -> "v0";
-        }
-
-    }
+    @InjectMock
+    ManagedMarkUserProfilePictureAsFeaturedUseCase managedMarkUserProfilePictureAsFeaturedUseCase;
 
     @Test
-    public void should_upload_user_profile_picture() throws Exception {
+    public void should_store_new_user_profile_picture() throws Exception {
         // Given
-        doReturn(new TestUserProfilePictureSaved())
-                .when(managedStoreNewUserProfilePictureUseCase).execute(
-                        new StoreNewUserProfilePictureCommand(
-                                new JaxRsUserPseudo("userPseudo"),
-                                Files.readAllBytes(getFileFromResource("given/1px_white.jpg").toPath()),
-                                SupportedMediaType.IMAGE_JPEG));
 
         // When && Then
         given()
@@ -74,15 +54,17 @@ public class UserProfilePictureEndpointTest {
                 .post("/users/userPseudo/storeNewUserProfilePicture")
                 .then()
                 .log().all()
-                .statusCode(201)
-                .body(JsonSchemaValidator.matchesJsonSchemaInClasspath("expected/profilePicture.json"))
-                .body("userPseudo", equalTo("userPseudo"))
-                .body("mediaType", equalTo("IMAGE_JPEG"))
-                .body("versionId", equalTo("v0"));
+                .statusCode(201);
+
+        verify(managedStoreNewUserProfilePictureUseCase, times(1)).execute(
+                new StoreNewUserProfilePictureCommand(
+                        new JaxRsUserPseudo("userPseudo"),
+                        Files.readAllBytes(getFileFromResource("given/1px_white.jpg").toPath()),
+                        SupportedMediaType.IMAGE_JPEG));
     }
 
     @Test
-    public void should_upload_user_profile_picture_return_expected_response_when_profile_picture_repository_exception_is_thrown() throws Exception {
+    public void should_store_new_user_profile_picture_return_expected_response_when_user_profile_picture_repository_exception_is_thrown() throws Exception {
         // Given
         doThrow(new UserProfilePictureRepositoryException()).when(managedStoreNewUserProfilePictureUseCase).execute(any());
 
@@ -150,7 +132,7 @@ public class UserProfilePictureEndpointTest {
     }
 
     @Test
-    public void should_get_content_user_profile_picture_return_expected_response_when_profile_picture_version_unknown_is_thrown() {
+    public void should_get_content_user_profile_picture_return_expected_response_when_user_profile_picture_version_unknown_is_thrown() {
         // Given
         doThrow(new UserProfilePictureUnknownException(mock(UserProfilePictureIdentifier.class)))
                 .when(managedGetContentUserProfilePictureUseCase).execute(any());
@@ -166,7 +148,7 @@ public class UserProfilePictureEndpointTest {
     }
 
     @Test
-    public void should_get_content_user_profile_picture_return_expected_response_when_profile_picture_repository_exception_is_thrown() {
+    public void should_get_content_user_profile_picture_return_expected_response_when_user_profile_picture_repository_exception_is_thrown() {
         // Given
         doThrow(new UserProfilePictureRepositoryException()).when(managedGetContentUserProfilePictureUseCase).execute(any());
 
@@ -196,6 +178,11 @@ public class UserProfilePictureEndpointTest {
         public VersionId versionId() {
             return () -> "v0";
         }
+
+        @Override
+        public boolean isFeatured() {
+            return true;
+        }
     }
 
     @Test
@@ -217,11 +204,12 @@ public class UserProfilePictureEndpointTest {
                 .body(JsonSchemaValidator.matchesJsonSchemaInClasspath("expected/profilePictures.json"))
                 .body("userProfilePictures[0].userPseudo", equalTo("userPseudo"))
                 .body("userProfilePictures[0].mediaType", equalTo("IMAGE_JPEG"))
-                .body("userProfilePictures[0].versionId", equalTo("v0"));
+                .body("userProfilePictures[0].versionId", equalTo("v0"))
+                .body("userProfilePictures[0].featured", equalTo(true));
     }
 
     @Test
-    public void should_list_jpeg_user_profile_pictures_return_expected_response_when_profile_picture_repository_exception_is_thrown() {
+    public void should_list_jpeg_user_profile_pictures_return_expected_response_when_user_profile_picture_repository_exception_is_thrown() {
         // Given
         doThrow(new UserProfilePictureRepositoryException()).when(managedListUserProfilPicturesUseCase).execute(
                 new ListUserProfilPicturesCommand(
@@ -235,6 +223,47 @@ public class UserProfilePictureEndpointTest {
                 .get("/users/userPseudo")
                 .then()
                 .log().all()
+                .statusCode(500);
+    }
+
+    @Test
+    public void should_mark_as_featured() {
+        // Given
+        doReturn(new TestUserProfilePicture()).when(managedMarkUserProfilePictureAsFeaturedUseCase).execute(
+                new MarkUserProfilePictureAsFeaturedCommand(
+                        new JaxRsUserPseudo("userPseudo"),
+                        SupportedMediaType.IMAGE_JPEG,
+                        new JaxRsVersionId("v0")));
+
+        // When && Then
+        given()
+                .contentType("image/jpeg; charset=ISO-8859-1")
+                .when()
+                .post("/users/userPseudo/v0/markAsFeatured")
+                .then()
+                .statusCode(200)
+                .body(JsonSchemaValidator.matchesJsonSchemaInClasspath("expected/profilePicture.json"))
+                .body("userPseudo", equalTo("userPseudo"))
+                .body("mediaType", equalTo("IMAGE_JPEG"))
+                .body("versionId", equalTo("v0"))
+                .body("featured", equalTo(true));
+    }
+
+    @Test
+    public void should_mark_as_featured_return_expected_response_when_user_profile_picture_featured_repository_exception_is_thrown() {
+        // Given
+        doThrow(new UserProfilPictureFeaturedRepositoryException()).when(managedMarkUserProfilePictureAsFeaturedUseCase).execute(
+                new MarkUserProfilePictureAsFeaturedCommand(
+                        new JaxRsUserPseudo("userPseudo"),
+                        SupportedMediaType.IMAGE_JPEG,
+                        new JaxRsVersionId("v0")));
+
+        // When && Then
+        given()
+                .contentType("image/jpeg; charset=ISO-8859-1")
+                .when()
+                .post("/users/userPseudo/v0/markAsFeatured")
+                .then()
                 .statusCode(500);
     }
 

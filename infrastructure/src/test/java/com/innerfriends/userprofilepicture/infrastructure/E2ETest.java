@@ -30,7 +30,7 @@ public class E2ETest {
 
     @Test
     @Order(0)
-    public void should_store_user_profile_picture() throws Exception {
+    public void should_store_new_user_profile_picture() throws Exception {
         given()
                 .multiPart("picture", getFileFromResource("given/1px_white.jpg"))
                 .multiPart("supportedMediaType", "IMAGE_JPEG")
@@ -50,7 +50,7 @@ public class E2ETest {
 
     @Test
     @Order(1)
-    public void should_download_user_profile_picture_by_version_id() throws Exception {
+    public void should_download_user_profile_picture_by_version_id() {
         final String versionId = s3Client.listObjectVersions(ListObjectVersionsRequest
                 .builder()
                 .bucket(bucketUserProfilePictureName)
@@ -67,11 +67,27 @@ public class E2ETest {
 
     @Test
     @Order(2)
-    public void should_list_user_profile_pictures() throws Exception {
+    public void should_list_user_profile_pictures() {
         given()
                 .header("Content-Type", "image/jpeg")
                 .when()
                 .get("/users/pseudoE2E")
+                .then()
+                .statusCode(200);
+    }
+
+    @Test
+    @Order(3)
+    public void should_mark_as_featured() {
+        final List<ObjectVersion> objectVersions = s3Client.listObjectVersions(ListObjectVersionsRequest
+                .builder()
+                .bucket(bucketUserProfilePictureName)
+                .prefix("pseudoE2E.jpeg")
+                .build()).versions();
+        given()
+                .contentType("image/jpeg; charset=ISO-8859-1")
+                .when()
+                .post(String.format("/users/pseudoE2E/%s/markAsFeatured", objectVersions.get(0).versionId()))
                 .then()
                 .statusCode(200);
     }

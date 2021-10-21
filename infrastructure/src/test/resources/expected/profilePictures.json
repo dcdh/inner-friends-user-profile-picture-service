@@ -11,7 +11,8 @@
         {
           "userPseudo": "pseudo",
           "mediaType": "IMAGE_JPEG",
-          "versionId": "v0"
+          "versionId": "v0",
+          "featured": true
         }
       ]
     }
@@ -31,7 +32,8 @@
           {
             "userPseudo": "pseudo",
             "mediaType": "IMAGE_JPEG",
-            "versionId": "v0"
+            "versionId": "v0",
+            "featured": true
           }
         ]
       ],
@@ -49,13 +51,15 @@
               {
                 "userPseudo": "pseudo",
                 "mediaType": "IMAGE_JPEG",
-                "versionId": "v0"
+                "versionId": "v0",
+                "featured": true
               }
             ],
             "required": [
               "userPseudo",
               "mediaType",
-              "versionId"
+              "versionId",
+              "featured"
             ],
             "properties": {
               "userPseudo": {
@@ -86,6 +90,16 @@
                 "default": "",
                 "examples": [
                   "v0"
+                ]
+              },
+              "featured": {
+                "$id": "#/properties/userProfilePictures/items/anyOf/0/properties/featured",
+                "type": "boolean",
+                "title": "The featured schema",
+                "description": "An explanation about the purpose of this instance.",
+                "default": false,
+                "examples": [
+                  true
                 ]
               }
             },

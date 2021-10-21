@@ -25,7 +25,7 @@ import static org.mockito.Mockito.*;
 
 @QuarkusTest
 @ExtendWith(MockitoExtension.class)
-public class S3UserProfilePictureRepositoryTest {
+public class S3UserProfilePictureIdentifierRepositoryTest {
 
     @Inject
     S3UserProfilePictureRepository s3UserProfilePictureRepository;
@@ -92,12 +92,13 @@ public class S3UserProfilePictureRepositoryTest {
                 .when(s3ObjectKeyProvider).objectKey(userPseudo, SupportedMediaType.IMAGE_JPEG);
 
         // When
-        final UserProfilePictureSaved userProfilePictureSaved = s3UserProfilePictureRepository.storeNewUserProfilePicture(
+        final UserProfilePictureIdentifier userProfilePictureIdentifier = s3UserProfilePictureRepository.storeNewUserProfilePicture(
                 new TestNewUserProfilePicture(userPseudo));
 
         // Then
-        assertThat(userProfilePictureSaved.userPseudo().pseudo()).isEqualTo("userPseudo");
-        assertThat(userProfilePictureSaved.versionId()).isNotNull();
+        assertThat(userProfilePictureIdentifier.userPseudo().pseudo()).isEqualTo("userPseudo");
+        assertThat(userProfilePictureIdentifier.mediaType()).isEqualTo(SupportedMediaType.IMAGE_JPEG);
+        assertThat(userProfilePictureIdentifier.versionId()).isNotNull();
 
         final List<ObjectVersion> objectVersions = s3Client.listObjectVersions(ListObjectVersionsRequest
                 .builder()
@@ -105,7 +106,7 @@ public class S3UserProfilePictureRepositoryTest {
                 .prefix("userPseudo")
                 .build()).versions();
         assertThat(objectVersions.size()).isEqualTo(1);
-        assertThat(objectVersions.get(0).versionId()).isEqualTo(userProfilePictureSaved.versionId().version());
+        assertThat(objectVersions.get(0).versionId()).isEqualTo(userProfilePictureIdentifier.versionId().version());
         assertThat(objectVersions.get(0).key()).isEqualTo("userPseudo.jpeg");
 
         verify(s3Client, times(1)).putObject(any(PutObjectRequest.class), any(RequestBody.class));
@@ -257,13 +258,13 @@ public class S3UserProfilePictureRepositoryTest {
         final String versionId = s3Client.putObject(putObjectRequest, RequestBody.fromBytes("picture".getBytes())).versionId();
 
         // When
-        final List<? extends UserProfilePicture> userProfilePictures = s3UserProfilePictureRepository.listByUserPseudoAndMediaType(userPseudo, SupportedMediaType.IMAGE_JPEG);
+        final List<? extends UserProfilePictureIdentifier> userProfilePicturesIdentifier = s3UserProfilePictureRepository.listByUserPseudoAndMediaType(userPseudo, SupportedMediaType.IMAGE_JPEG);
 
         // Then
-        assertThat(userProfilePictures.size()).isEqualTo(1);
-        assertThat(userProfilePictures.get(0).userPseudo().pseudo()).isEqualTo("user");
-        assertThat(userProfilePictures.get(0).mediaType()).isEqualTo(SupportedMediaType.IMAGE_JPEG);
-        assertThat(userProfilePictures.get(0).versionId().version()).isEqualTo(versionId);
+        assertThat(userProfilePicturesIdentifier.size()).isEqualTo(1);
+        assertThat(userProfilePicturesIdentifier.get(0).userPseudo().pseudo()).isEqualTo("user");
+        assertThat(userProfilePicturesIdentifier.get(0).mediaType()).isEqualTo(SupportedMediaType.IMAGE_JPEG);
+        assertThat(userProfilePicturesIdentifier.get(0).versionId().version()).isEqualTo(versionId);
         verify(s3Client, times(1)).listObjectVersions(any(ListObjectVersionsRequest.class));
     }
 

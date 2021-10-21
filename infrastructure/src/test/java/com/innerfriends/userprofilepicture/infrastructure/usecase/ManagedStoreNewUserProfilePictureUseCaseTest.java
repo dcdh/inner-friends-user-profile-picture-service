@@ -1,6 +1,5 @@
 package com.innerfriends.userprofilepicture.infrastructure.usecase;
 
-import com.innerfriends.userprofilepicture.domain.UserProfilePictureSaved;
 import com.innerfriends.userprofilepicture.domain.usecase.StoreNewUserProfilePictureCommand;
 import com.innerfriends.userprofilepicture.domain.usecase.StoreNewUserProfilePictureUseCase;
 import io.quarkus.test.junit.QuarkusTest;
@@ -28,11 +27,10 @@ public class ManagedStoreNewUserProfilePictureUseCaseTest {
     public void should_call_decorated() {
         // Given
         final StoreNewUserProfilePictureCommand storeNewUserProfilePictureCommand = mock(StoreNewUserProfilePictureCommand.class);
-        final UserProfilePictureSaved userProfilePictureSaved = mock(UserProfilePictureSaved.class);
-        doReturn(userProfilePictureSaved).when(storeNewUserProfilePictureUseCase).execute(storeNewUserProfilePictureCommand);
 
         // When && Then
-        assertThat(managedStoreNewUserProfilePictureUseCase.execute(storeNewUserProfilePictureCommand)).isEqualTo(userProfilePictureSaved);
+        assertThat(managedStoreNewUserProfilePictureUseCase.execute(storeNewUserProfilePictureCommand)).isEqualTo(null);
+        verify(storeNewUserProfilePictureUseCase, times(1)).execute(storeNewUserProfilePictureCommand);
     }
 
 }

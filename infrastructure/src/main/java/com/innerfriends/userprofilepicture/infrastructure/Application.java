@@ -1,8 +1,10 @@
 package com.innerfriends.userprofilepicture.infrastructure;
 
+import com.innerfriends.userprofilepicture.domain.UserProfilPictureFeaturedRepository;
 import com.innerfriends.userprofilepicture.domain.UserProfilePictureRepository;
 import com.innerfriends.userprofilepicture.domain.usecase.GetContentUserProfilePictureUseCase;
 import com.innerfriends.userprofilepicture.domain.usecase.ListUserProfilPicturesUseCase;
+import com.innerfriends.userprofilepicture.domain.usecase.MarkUserProfilePictureAsFeaturedUseCase;
 import com.innerfriends.userprofilepicture.domain.usecase.StoreNewUserProfilePictureUseCase;
 import com.innerfriends.userprofilepicture.infrastructure.s3.S3ObjectKey;
 import com.innerfriends.userprofilepicture.infrastructure.s3.S3ObjectKeyProvider;
@@ -26,8 +28,15 @@ public class Application {
 
     @Produces
     @ApplicationScoped
-    public ListUserProfilPicturesUseCase listUserProfilPicturesUseCaseProducer(final UserProfilePictureRepository userProfilePictureRepository) {
-        return new ListUserProfilPicturesUseCase(userProfilePictureRepository);
+    public ListUserProfilPicturesUseCase listUserProfilPicturesUseCaseProducer(final UserProfilePictureRepository userProfilePictureRepository,
+                                                                               final UserProfilPictureFeaturedRepository userProfilPictureFeaturedRepository) {
+        return new ListUserProfilPicturesUseCase(userProfilePictureRepository, userProfilPictureFeaturedRepository);
+    }
+
+    @Produces
+    @ApplicationScoped
+    public MarkUserProfilePictureAsFeaturedUseCase markUserProfilePictureAsFeaturedUseCaseProducer(final UserProfilPictureFeaturedRepository userProfilPictureFeaturedRepository) {
+        return new MarkUserProfilePictureAsFeaturedUseCase(userProfilPictureFeaturedRepository);
     }
 
     @ApplicationScoped

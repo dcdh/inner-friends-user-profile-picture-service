@@ -5,9 +5,11 @@ import com.innerfriends.userprofilepicture.domain.SupportedMediaType;
 import com.innerfriends.userprofilepicture.domain.UserProfilePicture;
 import com.innerfriends.userprofilepicture.domain.usecase.GetContentUserProfilePictureCommand;
 import com.innerfriends.userprofilepicture.domain.usecase.ListUserProfilPicturesCommand;
+import com.innerfriends.userprofilepicture.domain.usecase.MarkUserProfilePictureAsFeaturedCommand;
 import com.innerfriends.userprofilepicture.domain.usecase.StoreNewUserProfilePictureCommand;
 import com.innerfriends.userprofilepicture.infrastructure.usecase.ManagedGetContentUserProfilePictureUseCase;
 import com.innerfriends.userprofilepicture.infrastructure.usecase.ManagedListUserProfilPicturesUseCase;
+import com.innerfriends.userprofilepicture.infrastructure.usecase.ManagedMarkUserProfilePictureAsFeaturedUseCase;
 import com.innerfriends.userprofilepicture.infrastructure.usecase.ManagedStoreNewUserProfilePictureUseCase;
 import org.jboss.resteasy.annotations.providers.multipart.MultipartForm;
 
@@ -23,13 +25,16 @@ public class UserProfilePictureEndpoint {
     private final ManagedStoreNewUserProfilePictureUseCase managedStoreNewUserProfilePictureUseCase;
     private final ManagedGetContentUserProfilePictureUseCase managedGetContentUserProfilePictureUseCase;
     private final ManagedListUserProfilPicturesUseCase managedListUserProfilPicturesUseCase;
+    private final ManagedMarkUserProfilePictureAsFeaturedUseCase managedMarkUserProfilePictureAsFeaturedUseCase;
 
     public UserProfilePictureEndpoint(final ManagedStoreNewUserProfilePictureUseCase managedStoreNewUserProfilePictureUseCase,
                                       final ManagedGetContentUserProfilePictureUseCase managedGetContentUserProfilePictureUseCase,
-                                      final ManagedListUserProfilPicturesUseCase managedListUserProfilPicturesUseCase) {
+                                      final ManagedListUserProfilPicturesUseCase managedListUserProfilPicturesUseCase,
+                                      final ManagedMarkUserProfilePictureAsFeaturedUseCase managedMarkUserProfilePictureAsFeaturedUseCase) {
         this.managedStoreNewUserProfilePictureUseCase = Objects.requireNonNull(managedStoreNewUserProfilePictureUseCase);
         this.managedGetContentUserProfilePictureUseCase = Objects.requireNonNull(managedGetContentUserProfilePictureUseCase);
         this.managedListUserProfilPicturesUseCase = Objects.requireNonNull(managedListUserProfilPicturesUseCase);
+        this.managedMarkUserProfilePictureAsFeaturedUseCase = Objects.requireNonNull(managedMarkUserProfilePictureAsFeaturedUseCase);
     }
 
     @POST
@@ -37,12 +42,11 @@ public class UserProfilePictureEndpoint {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     public Response storeNewUserProfilePicture(@PathParam("userPseudo") final String userPseudo,
                                                @MultipartForm final UserProfilePictureToStore userProfilePictureToStore) {
-        final UserProfilePicture userProfilePicture = managedStoreNewUserProfilePictureUseCase.execute(
+        managedStoreNewUserProfilePictureUseCase.execute(
                 new StoreNewUserProfilePictureCommand(
                         new JaxRsUserPseudo(userPseudo), userProfilePictureToStore.picture, userProfilePictureToStore.mediaType));
         return Response
                 .status(Response.Status.CREATED)
-                .entity(new UserProfilePictureDTO(userProfilePicture))
                 .type(MediaType.APPLICATION_JSON)
                 .build();
     }
@@ -77,6 +81,19 @@ public class UserProfilePictureEndpoint {
                         SupportedMediaType.IMAGE_JPEG));
         return Response.ok(new UserProfilePicturesDTO(userProfilePictures))
                 .build();
+    }
+
+    @POST
+    @Path("/{userPseudo}/{versionId}/markAsFeatured")
+    @Consumes("image/jpeg")
+    public Response markUserProfilePictureAsFeatured(@PathParam("userPseudo") final String userPseudo,
+                                                     @PathParam("versionId") final String versionId) {
+        final UserProfilePicture userProfilePicture = managedMarkUserProfilePictureAsFeaturedUseCase.execute(
+                new MarkUserProfilePictureAsFeaturedCommand(
+                        new JaxRsUserPseudo(userPseudo),
+                        SupportedMediaType.IMAGE_JPEG,
+                        new JaxRsVersionId(versionId)));
+        return Response.ok(new UserProfilePictureDTO(userProfilePicture)).build();
     }
 
 }

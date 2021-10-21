@@ -12,11 +12,13 @@ public final class UserProfilePictureDTO {
     private final String userPseudo;
     private final SupportedMediaType mediaType;
     private final String versionId;
+    private final boolean isFeatured;
 
     public UserProfilePictureDTO(final UserProfilePicture userProfilePicture) {
         this.userPseudo = userProfilePicture.userPseudo().pseudo();
         this.mediaType = userProfilePicture.mediaType();
         this.versionId = userProfilePicture.versionId().version();
+        this.isFeatured = userProfilePicture.isFeatured();
     }
 
     public String getUserPseudo() {
@@ -31,18 +33,23 @@ public final class UserProfilePictureDTO {
         return versionId;
     }
 
+    public boolean isFeatured() {
+        return isFeatured;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof UserProfilePictureDTO)) return false;
         UserProfilePictureDTO that = (UserProfilePictureDTO) o;
-        return Objects.equals(userPseudo, that.userPseudo) &&
+        return isFeatured == that.isFeatured &&
+                Objects.equals(userPseudo, that.userPseudo) &&
                 mediaType == that.mediaType &&
                 Objects.equals(versionId, that.versionId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(userPseudo, mediaType, versionId);
+        return Objects.hash(userPseudo, mediaType, versionId, isFeatured);
     }
 }

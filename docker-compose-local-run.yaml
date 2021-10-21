@@ -12,12 +12,26 @@ services:
       - S3BACKEND=mem
       - ENDPOINT=zenko
 
+  arangodb:
+    image: arangodb:3.7.11
+    ports:
+      - 8529:8529
+    environment:
+      - ARANGO_ROOT_PASSWORD=password
+      - ARANGODB_OVERRIDE_DETECTED_TOTAL_MEMORY=100m
+
   inner-friends-user-profile-picture-service:
     image: damdamdeo/inner-friends-user-profile-picture-service
     ports:
       - 8080:8080
     environment:
       - quarkus.s3.endpoint-override=http://zenko:8000
+      - arangodb.host=arangodb
+      - arangodb.port=8529
+      - arangodb.user=root
+      - arangodb.password=password
+      - arangodb.dbName=friends
     depends_on:
       - zenko
+      - arangodb
     restart: unless-stopped

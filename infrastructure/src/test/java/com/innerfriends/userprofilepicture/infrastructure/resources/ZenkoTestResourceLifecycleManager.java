@@ -7,7 +7,6 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.containers.wait.strategy.Wait;
 
-import java.util.Collections;
 import java.util.Map;
 
 // https://www.zenko.io/blog/deploy-zenko-1-1-on-bare-metal-private-or-public-cloud/
@@ -30,13 +29,13 @@ public class ZenkoTestResourceLifecycleManager implements QuarkusTestResourceLif
                 );
         zenkoContainer.start();
         zenkoContainer.followOutput(logConsumer);
-        System.setProperty("quarkus.s3.endpoint-override", String.format("http://localhost:%d", zenkoContainer.getMappedPort(8000)));
-        return Collections.emptyMap();
+        return Map.of(
+                "quarkus.s3.endpoint-override", String.format("http://localhost:%d", zenkoContainer.getMappedPort(8000))
+        );
     }
 
     @Override
     public void stop() {
-        System.clearProperty("quarkus.s3.endpoint-override");
         if (zenkoContainer != null) {
             zenkoContainer.close();
         }

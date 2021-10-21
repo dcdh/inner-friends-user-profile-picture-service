@@ -35,7 +35,7 @@ public class S3UserProfilePictureRepository implements UserProfilePictureReposit
 
     // TODO span interceptor
     @Override
-    public UserProfilePictureSaved storeNewUserProfilePicture(final NewUserProfilePicture newUserProfilePicture) throws UserProfilePictureRepositoryException {
+    public UserProfilePictureIdentifier storeNewUserProfilePicture(final NewUserProfilePicture newUserProfilePicture) throws UserProfilePictureRepositoryException {
         final PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                 .bucket(bucketUserProfilePictureName)
                 .key(s3ObjectKeyProvider.objectKey(newUserProfilePicture.userPseudo(),
@@ -44,7 +44,7 @@ public class S3UserProfilePictureRepository implements UserProfilePictureReposit
                 .build();
         try {
             final PutObjectResponse putObjectResponse = s3Client.putObject(putObjectRequest, RequestBody.fromBytes(newUserProfilePicture.picture()));
-            return new S3UserProfilePictureSaved(newUserProfilePicture.userPseudo(),
+            return new S3UserProfilePictureIdentifier(newUserProfilePicture.userPseudo(),
                     newUserProfilePicture.mediaType(),
                     putObjectResponse);
         } catch (final SdkException sdkException) {
@@ -76,7 +76,7 @@ public class S3UserProfilePictureRepository implements UserProfilePictureReposit
 
     // TODO span interceptor
     @Override
-    public List<? extends UserProfilePicture> listByUserPseudoAndMediaType(final UserPseudo userPseudo, final SupportedMediaType mediaType)
+    public List<? extends UserProfilePictureIdentifier> listByUserPseudoAndMediaType(final UserPseudo userPseudo, final SupportedMediaType mediaType)
             throws UserProfilePictureRepositoryException {
         final ListObjectVersionsRequest listObjectVersionsRequest = ListObjectVersionsRequest.builder()
                 .bucket(bucketUserProfilePictureName)
@@ -85,7 +85,7 @@ public class S3UserProfilePictureRepository implements UserProfilePictureReposit
         final ListObjectVersionsResponse listObjectVersionsResponse = s3Client.listObjectVersions(listObjectVersionsRequest);
         return listObjectVersionsResponse.versions()
                 .stream()
-                .map(objectVersion -> new S3UserProfilePicture(userPseudo, mediaType, objectVersion))
+                .map(objectVersion -> new S3UserProfilePictureIdentifier(userPseudo, mediaType, objectVersion))
                 .collect(Collectors.toList());
     }
 
