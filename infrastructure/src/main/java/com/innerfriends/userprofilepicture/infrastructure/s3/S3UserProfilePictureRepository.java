@@ -14,6 +14,7 @@ import software.amazon.awssdk.services.s3.model.*;
 import javax.enterprise.context.ApplicationScoped;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
@@ -87,6 +88,22 @@ public class S3UserProfilePictureRepository implements UserProfilePictureReposit
                 .stream()
                 .map(objectVersion -> new S3UserProfilePictureIdentifier(userPseudo, mediaType, objectVersion))
                 .collect(Collectors.toList());
+    }
+
+    // TODO span interceptor
+    @Override
+    public Optional<UserProfilePictureIdentifier> getFirst(final UserPseudo userPseudo, final SupportedMediaType mediaType) throws UserProfilePictureRepositoryException {
+        final ListObjectVersionsRequest listObjectVersionsRequest = ListObjectVersionsRequest.builder()
+                .bucket(bucketUserProfilePictureName)
+                .prefix(s3ObjectKeyProvider.objectKey(userPseudo, mediaType).key())
+                .build();
+        final ListObjectVersionsResponse listObjectVersionsResponse = s3Client.listObjectVersions(listObjectVersionsRequest);
+        final List<ObjectVersion> objectVersions = listObjectVersionsResponse.versions();
+        if (objectVersions.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(new S3UserProfilePictureIdentifier(userPseudo, mediaType,
+                objectVersions.get(objectVersions.size() - 1)));
     }
 
 }

@@ -92,6 +92,24 @@ public class E2ETest {
                 .statusCode(200);
     }
 
+    @Test
+    @Order(4)
+    public void should_get_featured_user_profile_picture() throws Exception {
+        final List<ObjectVersion> objectVersions = s3Client.listObjectVersions(ListObjectVersionsRequest
+                .builder()
+                .bucket(bucketUserProfilePictureName)
+                .prefix("pseudoE2E.jpeg")
+                .build()).versions();
+        final String versionId = given()
+                .contentType("image/jpeg; charset=ISO-8859-1")
+                .when()
+                .get("/users/pseudoE2E/featured")
+                .then()
+                .statusCode(200)
+                .extract().path("versionId");
+        assertThat(versionId).isEqualTo(objectVersions.get(0).versionId());
+    }
+
     private File getFileFromResource(final String fileName) throws Exception {
         final ClassLoader classLoader = getClass().getClassLoader();
         final URL resource = classLoader.getResource(fileName);

@@ -1,14 +1,8 @@
 package com.innerfriends.userprofilepicture.infrastructure.interfaces;
 
 import com.innerfriends.userprofilepicture.domain.*;
-import com.innerfriends.userprofilepicture.domain.usecase.GetContentUserProfilePictureCommand;
-import com.innerfriends.userprofilepicture.domain.usecase.ListUserProfilPicturesCommand;
-import com.innerfriends.userprofilepicture.domain.usecase.MarkUserProfilePictureAsFeaturedCommand;
-import com.innerfriends.userprofilepicture.domain.usecase.StoreNewUserProfilePictureCommand;
-import com.innerfriends.userprofilepicture.infrastructure.usecase.ManagedGetContentUserProfilePictureUseCase;
-import com.innerfriends.userprofilepicture.infrastructure.usecase.ManagedListUserProfilPicturesUseCase;
-import com.innerfriends.userprofilepicture.infrastructure.usecase.ManagedMarkUserProfilePictureAsFeaturedUseCase;
-import com.innerfriends.userprofilepicture.infrastructure.usecase.ManagedStoreNewUserProfilePictureUseCase;
+import com.innerfriends.userprofilepicture.domain.usecase.*;
+import com.innerfriends.userprofilepicture.infrastructure.usecase.*;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
 import io.restassured.module.jsv.JsonSchemaValidator;
@@ -41,6 +35,9 @@ public class UserProfilePictureEndpointTest {
 
     @InjectMock
     ManagedMarkUserProfilePictureAsFeaturedUseCase managedMarkUserProfilePictureAsFeaturedUseCase;
+
+    @InjectMock
+    ManagedGetFeaturedUserProfilePictureUseCase managedGetFeaturedUserProfilePictureUseCase;
 
     @Test
     public void should_store_new_user_profile_picture() throws Exception {
@@ -265,6 +262,45 @@ public class UserProfilePictureEndpointTest {
                 .post("/users/userPseudo/v0/markAsFeatured")
                 .then()
                 .statusCode(500);
+    }
+
+    @Test
+    public void should_get_featured() {
+        // Given
+        doReturn(new TestUserProfilePicture()).when(managedGetFeaturedUserProfilePictureUseCase).execute(
+                new GetFeaturedUserProfilePictureCommand(
+                        new JaxRsUserPseudo("userPseudo"),
+                        SupportedMediaType.IMAGE_JPEG));
+
+        // When && Then
+        given()
+                .contentType("image/jpeg; charset=ISO-8859-1")
+                .when()
+                .get("/users/userPseudo/featured")
+                .then()
+                .statusCode(200)
+                .body(JsonSchemaValidator.matchesJsonSchemaInClasspath("expected/profilePicture.json"))
+                .body("userPseudo", equalTo("userPseudo"))
+                .body("mediaType", equalTo("IMAGE_JPEG"))
+                .body("versionId", equalTo("v0"))
+                .body("featured", equalTo(true));
+    }
+
+    @Test
+    public void should_get_featured_return_expected_response_when_user_profile_picture_not_available_yet_is_thrown() {
+        // Given
+        doThrow(new UserProfilePictureNotAvailableYetException(new JaxRsUserPseudo("userPseudo"))).when(managedGetFeaturedUserProfilePictureUseCase).execute(
+                new GetFeaturedUserProfilePictureCommand(
+                        new JaxRsUserPseudo("userPseudo"),
+                        SupportedMediaType.IMAGE_JPEG));
+
+        // When && Then
+        given()
+                .contentType("image/jpeg; charset=ISO-8859-1")
+                .when()
+                .get("/users/userPseudo/featured")
+                .then()
+                .statusCode(404);
     }
 
     private File getFileFromResource(final String fileName) throws Exception {

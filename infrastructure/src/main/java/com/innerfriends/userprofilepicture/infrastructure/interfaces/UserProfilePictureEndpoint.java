@@ -3,14 +3,8 @@ package com.innerfriends.userprofilepicture.infrastructure.interfaces;
 import com.innerfriends.userprofilepicture.domain.ContentUserProfilePicture;
 import com.innerfriends.userprofilepicture.domain.SupportedMediaType;
 import com.innerfriends.userprofilepicture.domain.UserProfilePicture;
-import com.innerfriends.userprofilepicture.domain.usecase.GetContentUserProfilePictureCommand;
-import com.innerfriends.userprofilepicture.domain.usecase.ListUserProfilPicturesCommand;
-import com.innerfriends.userprofilepicture.domain.usecase.MarkUserProfilePictureAsFeaturedCommand;
-import com.innerfriends.userprofilepicture.domain.usecase.StoreNewUserProfilePictureCommand;
-import com.innerfriends.userprofilepicture.infrastructure.usecase.ManagedGetContentUserProfilePictureUseCase;
-import com.innerfriends.userprofilepicture.infrastructure.usecase.ManagedListUserProfilPicturesUseCase;
-import com.innerfriends.userprofilepicture.infrastructure.usecase.ManagedMarkUserProfilePictureAsFeaturedUseCase;
-import com.innerfriends.userprofilepicture.infrastructure.usecase.ManagedStoreNewUserProfilePictureUseCase;
+import com.innerfriends.userprofilepicture.domain.usecase.*;
+import com.innerfriends.userprofilepicture.infrastructure.usecase.*;
 import org.jboss.resteasy.annotations.providers.multipart.MultipartForm;
 
 import javax.ws.rs.*;
@@ -26,15 +20,18 @@ public class UserProfilePictureEndpoint {
     private final ManagedGetContentUserProfilePictureUseCase managedGetContentUserProfilePictureUseCase;
     private final ManagedListUserProfilPicturesUseCase managedListUserProfilPicturesUseCase;
     private final ManagedMarkUserProfilePictureAsFeaturedUseCase managedMarkUserProfilePictureAsFeaturedUseCase;
+    private final ManagedGetFeaturedUserProfilePictureUseCase managedGetFeaturedUserProfilePictureUseCase;
 
     public UserProfilePictureEndpoint(final ManagedStoreNewUserProfilePictureUseCase managedStoreNewUserProfilePictureUseCase,
                                       final ManagedGetContentUserProfilePictureUseCase managedGetContentUserProfilePictureUseCase,
                                       final ManagedListUserProfilPicturesUseCase managedListUserProfilPicturesUseCase,
-                                      final ManagedMarkUserProfilePictureAsFeaturedUseCase managedMarkUserProfilePictureAsFeaturedUseCase) {
+                                      final ManagedMarkUserProfilePictureAsFeaturedUseCase managedMarkUserProfilePictureAsFeaturedUseCase,
+                                      final ManagedGetFeaturedUserProfilePictureUseCase managedGetFeaturedUserProfilePictureUseCase) {
         this.managedStoreNewUserProfilePictureUseCase = Objects.requireNonNull(managedStoreNewUserProfilePictureUseCase);
         this.managedGetContentUserProfilePictureUseCase = Objects.requireNonNull(managedGetContentUserProfilePictureUseCase);
         this.managedListUserProfilPicturesUseCase = Objects.requireNonNull(managedListUserProfilPicturesUseCase);
         this.managedMarkUserProfilePictureAsFeaturedUseCase = Objects.requireNonNull(managedMarkUserProfilePictureAsFeaturedUseCase);
+        this.managedGetFeaturedUserProfilePictureUseCase = Objects.requireNonNull(managedGetFeaturedUserProfilePictureUseCase);
     }
 
     @POST
@@ -93,6 +90,17 @@ public class UserProfilePictureEndpoint {
                         new JaxRsUserPseudo(userPseudo),
                         SupportedMediaType.IMAGE_JPEG,
                         new JaxRsVersionId(versionId)));
+        return Response.ok(new UserProfilePictureDTO(userProfilePicture)).build();
+    }
+
+    @GET
+    @Consumes("image/jpeg")
+    @Path("/{userPseudo}/featured")
+    public Response getFeaturedUserProfilePicture(@PathParam("userPseudo") final String userPseudo) {
+         final UserProfilePicture userProfilePicture = managedGetFeaturedUserProfilePictureUseCase.execute(
+                new GetFeaturedUserProfilePictureCommand(
+                        new JaxRsUserPseudo(userPseudo),
+                        SupportedMediaType.IMAGE_JPEG));
         return Response.ok(new UserProfilePictureDTO(userProfilePicture)).build();
     }
 

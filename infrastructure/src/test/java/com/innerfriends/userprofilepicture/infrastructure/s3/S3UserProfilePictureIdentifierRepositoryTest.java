@@ -17,6 +17,7 @@ import software.amazon.awssdk.services.s3.model.*;
 
 import javax.inject.Inject;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -265,6 +266,56 @@ public class S3UserProfilePictureIdentifierRepositoryTest {
         assertThat(userProfilePicturesIdentifier.get(0).userPseudo().pseudo()).isEqualTo("user");
         assertThat(userProfilePicturesIdentifier.get(0).mediaType()).isEqualTo(SupportedMediaType.IMAGE_JPEG);
         assertThat(userProfilePicturesIdentifier.get(0).versionId().version()).isEqualTo(versionId);
+        verify(s3Client, times(1)).listObjectVersions(any(ListObjectVersionsRequest.class));
+    }
+
+    @Test
+    public void should_get_last_version_of_user_profile_picture() {
+        // Given
+        final UserPseudo userPseudo = () -> "userPseudo";
+        doReturn(new S3ObjectKey(userPseudo, SupportedMediaType.IMAGE_JPEG))
+                .when(s3ObjectKeyProvider).objectKey(userPseudo, SupportedMediaType.IMAGE_JPEG);
+
+        final PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+                .bucket(bucketUserProfilePictureName)
+                .key("userPseudo.jpeg")
+                .contentType("image/jpeg")
+                .build();
+        s3Client.putObject(putObjectRequest, RequestBody.fromBytes("picture".getBytes()));
+        s3Client.putObject(putObjectRequest, RequestBody.fromBytes("picture".getBytes()));
+
+        // When
+        final Optional<UserProfilePictureIdentifier> userProfilePictureIdentifier = s3UserProfilePictureRepository.getFirst(userPseudo, SupportedMediaType.IMAGE_JPEG);
+
+        // Then
+        assertThat(userProfilePictureIdentifier.isPresent()).isTrue();
+        assertThat(userProfilePictureIdentifier.get().userPseudo().pseudo()).isEqualTo("userPseudo");
+        assertThat(userProfilePictureIdentifier.get().mediaType()).isEqualTo(SupportedMediaType.IMAGE_JPEG);
+        assertThat(userProfilePictureIdentifier.get().versionId()).isNotNull();
+
+        final List<ObjectVersion> objectVersions = s3Client.listObjectVersions(ListObjectVersionsRequest
+                .builder()
+                .bucket(bucketUserProfilePictureName)
+                .prefix("user")
+                .build()).versions();
+        final ObjectVersion firstObjectVersion = objectVersions.get(1);
+        assertThat(firstObjectVersion.versionId()).isEqualTo(userProfilePictureIdentifier.get().versionId().version());
+        assertThat(firstObjectVersion.isLatest()).isEqualTo(false);
+        verify(s3Client, atLeastOnce()).listObjectVersions(any(ListObjectVersionsRequest.class));
+    }
+
+    @Test
+    public void should_get_last_return_optional_empty_when_no_one_has_been_saved_yet() {
+        // Given
+        final UserPseudo userPseudo = () -> "userPseudo";
+        doReturn(new S3ObjectKey(userPseudo, SupportedMediaType.IMAGE_JPEG))
+                .when(s3ObjectKeyProvider).objectKey(userPseudo, SupportedMediaType.IMAGE_JPEG);
+
+        // When
+        final Optional<UserProfilePictureIdentifier> userProfilePictureIdentifier = s3UserProfilePictureRepository.getFirst(userPseudo, SupportedMediaType.IMAGE_JPEG);
+
+        // Then
+        assertThat(userProfilePictureIdentifier.isPresent()).isFalse();
         verify(s3Client, times(1)).listObjectVersions(any(ListObjectVersionsRequest.class));
     }
 
