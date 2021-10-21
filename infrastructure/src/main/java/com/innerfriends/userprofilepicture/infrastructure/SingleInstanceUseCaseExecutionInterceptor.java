@@ -22,8 +22,12 @@ public class SingleInstanceUseCaseExecutionInterceptor {
     public Object execution(final InvocationContext ctx) throws Exception {
         final UserPseudo userPseudo = ((UseCaseCommand) ctx.getParameters()[0]).userPseudo();
         this.lockMechanism.lock(userPseudo);
-        final Object ret = ctx.proceed();
-        this.lockMechanism.release(userPseudo);
+        final Object ret;
+        try {
+            ret = ctx.proceed();
+        } finally {
+            this.lockMechanism.release(userPseudo);
+        }
         return ret;
     }
 
