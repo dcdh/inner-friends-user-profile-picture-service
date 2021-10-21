@@ -4,6 +4,7 @@ import com.innerfriends.userprofilepicture.domain.UseCase;
 import com.innerfriends.userprofilepicture.domain.UserProfilePicture;
 import com.innerfriends.userprofilepicture.domain.usecase.GetFeaturedUserProfilePictureCommand;
 import com.innerfriends.userprofilepicture.domain.usecase.GetFeaturedUserProfilePictureUseCase;
+import com.innerfriends.userprofilepicture.infrastructure.SingleInstanceUseCaseExecution;
 
 import javax.enterprise.context.ApplicationScoped;
 import java.util.Objects;
@@ -17,6 +18,7 @@ public class ManagedGetFeaturedUserProfilePictureUseCase implements UseCase<User
         this.getFeaturedUserProfilePictureUseCase = Objects.requireNonNull(getFeaturedUserProfilePictureUseCase);
     }
 
+    @SingleInstanceUseCaseExecution
     @Override
     public UserProfilePicture execute(final GetFeaturedUserProfilePictureCommand command) {
         // TODO cache

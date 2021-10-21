@@ -4,6 +4,7 @@ import com.innerfriends.userprofilepicture.domain.UseCase;
 import com.innerfriends.userprofilepicture.domain.UserProfilePicture;
 import com.innerfriends.userprofilepicture.domain.usecase.ListUserProfilPicturesCommand;
 import com.innerfriends.userprofilepicture.domain.usecase.ListUserProfilPicturesUseCase;
+import com.innerfriends.userprofilepicture.infrastructure.SingleInstanceUseCaseExecution;
 
 import javax.enterprise.context.ApplicationScoped;
 import java.util.List;
@@ -18,6 +19,7 @@ public class ManagedListUserProfilPicturesUseCase implements UseCase<List<? exte
         this.listUserProfilPicturesUseCase = Objects.requireNonNull(listUserProfilPicturesUseCase);
     }
 
+    @SingleInstanceUseCaseExecution
     @Override
     public List<? extends UserProfilePicture> execute(final ListUserProfilPicturesCommand command) {
         // TODO cache

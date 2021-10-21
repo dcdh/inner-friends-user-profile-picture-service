@@ -20,6 +20,12 @@ services:
       - ARANGO_ROOT_PASSWORD=password
       - ARANGODB_OVERRIDE_DETECTED_TOTAL_MEMORY=100m
 
+  hazelcast:
+    image: hazelcast/hazelcast:4.1.5
+    ports:
+      - 5701:5701
+      - 8088:8080
+
   inner-friends-user-profile-picture-service:
     image: damdamdeo/inner-friends-user-profile-picture-service
     ports:
@@ -31,7 +37,10 @@ services:
       - arangodb.user=root
       - arangodb.password=password
       - arangodb.dbName=friends
+      - quarkus.hazelcast-client.cluster-name=dev
+      - quarkus.hazelcast-client.cluster-members=hazelcast:5701
     depends_on:
       - zenko
       - arangodb
+      - hazelcast
     restart: unless-stopped

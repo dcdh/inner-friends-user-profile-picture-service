@@ -4,6 +4,7 @@ import com.innerfriends.userprofilepicture.domain.UseCase;
 import com.innerfriends.userprofilepicture.domain.UserProfilePicture;
 import com.innerfriends.userprofilepicture.domain.usecase.MarkUserProfilePictureAsFeaturedCommand;
 import com.innerfriends.userprofilepicture.domain.usecase.MarkUserProfilePictureAsFeaturedUseCase;
+import com.innerfriends.userprofilepicture.infrastructure.SingleInstanceUseCaseExecution;
 
 import javax.enterprise.context.ApplicationScoped;
 import java.util.Objects;
@@ -17,6 +18,7 @@ public class ManagedMarkUserProfilePictureAsFeaturedUseCase implements UseCase<U
         this.markUserProfilePictureAsFeaturedUseCase = Objects.requireNonNull(markUserProfilePictureAsFeaturedUseCase);
     }
 
+    @SingleInstanceUseCaseExecution
     @Override
     public UserProfilePicture execute(final MarkUserProfilePictureAsFeaturedCommand command) {
         // TODO cache

@@ -19,3 +19,9 @@ services:
     environment:
       - ARANGO_ROOT_PASSWORD=password
       - ARANGODB_OVERRIDE_DETECTED_TOTAL_MEMORY=100m
+
+  hazelcast:
+    image: hazelcast/hazelcast:4.1.5
+    ports:
+      - 5701:5701
+      - 8088:8080
