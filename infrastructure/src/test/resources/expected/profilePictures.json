@@ -7,6 +7,7 @@
   "default": {},
   "examples": [
     {
+      "featureState": "NOT_SELECTED_YET",
       "userProfilePictures": [
         {
           "userPseudo": "pseudo",
@@ -18,9 +19,20 @@
     }
   ],
   "required": [
+    "featureState",
     "userProfilePictures"
   ],
   "properties": {
+    "featureState": {
+      "$id": "#/properties/featureState",
+      "type": "string",
+      "title": "The featureState schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": "",
+      "examples": [
+        "NOT_SELECTED_YET"
+      ]
+    },
     "userProfilePictures": {
       "$id": "#/properties/userProfilePictures",
       "type": "array",

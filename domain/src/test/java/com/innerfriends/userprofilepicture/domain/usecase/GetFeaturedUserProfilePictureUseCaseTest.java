@@ -25,10 +25,33 @@ public class GetFeaturedUserProfilePictureUseCaseTest {
         userProfilPictureFeaturedRepository = mock(UserProfilPictureFeaturedRepository.class);
     }
 
+    private static final class TestUserProfilePicture implements UserProfilePicture {
+
+        @Override
+        public boolean isFeatured() {
+            return false;
+        }
+
+        @Override
+        public UserPseudo userPseudo() {
+            return () -> "userPseudo";
+        }
+
+        @Override
+        public SupportedMediaType mediaType() {
+            return SupportedMediaType.IMAGE_JPEG;
+        }
+
+        @Override
+        public VersionId versionId() {
+            return () -> "v0";
+        }
+    }
+
     @Test
     public void should_get_featured_user_profile_picture() {
         // Given
-        final UserProfilePicture userProfilePicture = mock(UserProfilePicture.class);
+        final UserProfilePicture userProfilePicture = new TestUserProfilePicture();
         final UserPseudo userPseudo = mock(UserPseudo.class);
         final GetFeaturedUserProfilePictureCommand getFeaturedUserProfilePictureCommand = new GetFeaturedUserProfilePictureCommand(
                 userPseudo,
@@ -37,13 +60,13 @@ public class GetFeaturedUserProfilePictureUseCaseTest {
 
         // When && Then
         assertThat(new GetFeaturedUserProfilePictureUseCase(userProfilePictureRepository, userProfilPictureFeaturedRepository)
-                .execute(getFeaturedUserProfilePictureCommand)).isEqualTo(new GetFeaturedUserProfilePictureUseCase.DefaultUserProfilePicture(userProfilePicture));
+                .execute(getFeaturedUserProfilePictureCommand)).isEqualTo(new DomainUserProfilePicture(userProfilePicture, true));
     }
 
     @Test
     public void should_get_first_when_no_user_profile_picture_has_been_marked_as_featured() {
         // Given
-        final UserProfilePicture userProfilePicture = mock(UserProfilePicture.class);
+        final UserProfilePicture userProfilePicture = new TestUserProfilePicture();
         final UserPseudo userPseudo = mock(UserPseudo.class);
         final GetFeaturedUserProfilePictureCommand getFeaturedUserProfilePictureCommand = new GetFeaturedUserProfilePictureCommand(
                 userPseudo,
@@ -53,13 +76,12 @@ public class GetFeaturedUserProfilePictureUseCaseTest {
 
         // When && Then
         assertThat(new GetFeaturedUserProfilePictureUseCase(userProfilePictureRepository, userProfilPictureFeaturedRepository)
-                .execute(getFeaturedUserProfilePictureCommand)).isEqualTo(new GetFeaturedUserProfilePictureUseCase.DefaultUserProfilePicture(userProfilePicture));
+                .execute(getFeaturedUserProfilePictureCommand)).isEqualTo(new DomainUserProfilePicture(userProfilePicture, true));
     }
 
     @Test
     public void should_throw_user_profile_picture_not_available_yet_exception_when_no_one_has_been_saved_yet() {
         // Given
-        final UserProfilePicture userProfilePicture = mock(UserProfilePicture.class);
         final UserPseudo userPseudo = mock(UserPseudo.class);
         final GetFeaturedUserProfilePictureCommand getFeaturedUserProfilePictureCommand = new GetFeaturedUserProfilePictureCommand(
                 userPseudo,

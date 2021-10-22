@@ -1,6 +1,7 @@
 package com.innerfriends.userprofilepicture.infrastructure.interfaces;
 
-import com.innerfriends.userprofilepicture.domain.UserProfilePicture;
+import com.innerfriends.userprofilepicture.domain.FeatureState;
+import com.innerfriends.userprofilepicture.domain.UserProfilePictures;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 
 import java.util.List;
@@ -12,14 +13,21 @@ public final class UserProfilePicturesDTO {
 
     private final List<UserProfilePictureDTO> userProfilePictures;
 
-    public UserProfilePicturesDTO(final List<? extends UserProfilePicture> userProfilePictures) {
-        this.userProfilePictures = userProfilePictures.stream()
+    private final FeatureState featureState;
+
+    public UserProfilePicturesDTO(final UserProfilePictures userProfilePictures) {
+        this.userProfilePictures = userProfilePictures.userProfilePictures().stream()
                 .map(UserProfilePictureDTO::new)
                 .collect(Collectors.toList());
+        this.featureState = userProfilePictures.featureState();
     }
 
     public List<UserProfilePictureDTO> getUserProfilePictures() {
         return userProfilePictures;
+    }
+
+    public FeatureState getFeatureState() {
+        return featureState;
     }
 
     @Override
@@ -27,11 +35,12 @@ public final class UserProfilePicturesDTO {
         if (this == o) return true;
         if (!(o instanceof UserProfilePicturesDTO)) return false;
         UserProfilePicturesDTO that = (UserProfilePicturesDTO) o;
-        return Objects.equals(userProfilePictures, that.userProfilePictures);
+        return Objects.equals(userProfilePictures, that.userProfilePictures) &&
+                featureState == that.featureState;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(userProfilePictures);
+        return Objects.hash(userProfilePictures, featureState);
     }
 }

@@ -1,17 +1,16 @@
 package com.innerfriends.userprofilepicture.infrastructure.usecase;
 
 import com.innerfriends.userprofilepicture.domain.UseCase;
-import com.innerfriends.userprofilepicture.domain.UserProfilePicture;
+import com.innerfriends.userprofilepicture.domain.UserProfilePictures;
 import com.innerfriends.userprofilepicture.domain.usecase.ListUserProfilPicturesCommand;
 import com.innerfriends.userprofilepicture.domain.usecase.ListUserProfilPicturesUseCase;
 import com.innerfriends.userprofilepicture.infrastructure.SingleInstanceUseCaseExecution;
 
 import javax.enterprise.context.ApplicationScoped;
-import java.util.List;
 import java.util.Objects;
 
 @ApplicationScoped
-public class ManagedListUserProfilPicturesUseCase implements UseCase<List<? extends UserProfilePicture>, ListUserProfilPicturesCommand> {
+public class ManagedListUserProfilPicturesUseCase implements UseCase<UserProfilePictures, ListUserProfilPicturesCommand> {
 
     private final ListUserProfilPicturesUseCase listUserProfilPicturesUseCase;
 
@@ -21,7 +20,7 @@ public class ManagedListUserProfilPicturesUseCase implements UseCase<List<? exte
 
     @SingleInstanceUseCaseExecution
     @Override
-    public List<? extends UserProfilePicture> execute(final ListUserProfilPicturesCommand command) {
+    public UserProfilePictures execute(final ListUserProfilPicturesCommand command) {
         // TODO cache
         return listUserProfilPicturesUseCase.execute(command);
     }

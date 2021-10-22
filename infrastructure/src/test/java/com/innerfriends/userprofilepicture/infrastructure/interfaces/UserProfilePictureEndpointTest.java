@@ -14,6 +14,7 @@ import java.io.File;
 import java.net.URL;
 import java.nio.file.Files;
 import java.util.Collections;
+import java.util.List;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
@@ -182,10 +183,23 @@ public class UserProfilePictureEndpointTest {
         }
     }
 
+    private static final class TestUserProfilePictures implements UserProfilePictures {
+
+        @Override
+        public FeatureState featureState() {
+            return FeatureState.SELECTED;
+        }
+
+        @Override
+        public List<? extends UserProfilePicture> userProfilePictures() {
+            return Collections.singletonList(new TestUserProfilePicture());
+        }
+    }
+
     @Test
     public void should_list_jpeg_user_profile_pictures() {
         // Given
-        doReturn(Collections.singletonList(new TestUserProfilePicture())).when(managedListUserProfilPicturesUseCase).execute(
+        doReturn(new TestUserProfilePictures()).when(managedListUserProfilPicturesUseCase).execute(
                 new ListUserProfilPicturesCommand(
                         new JaxRsUserPseudo("userPseudo"),
                         SupportedMediaType.IMAGE_JPEG));
@@ -199,6 +213,7 @@ public class UserProfilePictureEndpointTest {
                 .log().all()
                 .statusCode(200)
                 .body(JsonSchemaValidator.matchesJsonSchemaInClasspath("expected/profilePictures.json"))
+                .body("featureState", equalTo("SELECTED"))
                 .body("userProfilePictures[0].userPseudo", equalTo("userPseudo"))
                 .body("userProfilePictures[0].mediaType", equalTo("IMAGE_JPEG"))
                 .body("userProfilePictures[0].versionId", equalTo("v0"))

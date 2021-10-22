@@ -1,6 +1,6 @@
 package com.innerfriends.userprofilepicture.infrastructure.usecase;
 
-import com.innerfriends.userprofilepicture.domain.UserProfilePicture;
+import com.innerfriends.userprofilepicture.domain.UserProfilePictures;
 import com.innerfriends.userprofilepicture.domain.UserPseudo;
 import com.innerfriends.userprofilepicture.domain.usecase.ListUserProfilPicturesCommand;
 import com.innerfriends.userprofilepicture.domain.usecase.ListUserProfilPicturesUseCase;
@@ -13,8 +13,6 @@ import org.mockito.InOrder;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import javax.inject.Inject;
-import java.util.Collections;
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
@@ -38,7 +36,7 @@ public class ManagedListUserProfilPicturesUseCaseTest {
         final ListUserProfilPicturesCommand listUserProfilPicturesCommand = mock(ListUserProfilPicturesCommand.class);
         final UserPseudo userPseudo = mock(UserPseudo.class);
         doReturn(userPseudo).when(listUserProfilPicturesCommand).userPseudo();
-        final List<? extends UserProfilePicture> userProfilePictures = Collections.emptyList();
+        final UserProfilePictures userProfilePictures = mock(UserProfilePictures.class);
         doReturn(userProfilePictures).when(listUserProfilPicturesUseCase).execute(listUserProfilPicturesCommand);
         final InOrder inOrder = inOrder(listUserProfilPicturesUseCase, lockMechanism);
 

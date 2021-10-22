@@ -3,6 +3,7 @@ package com.innerfriends.userprofilepicture.infrastructure.interfaces;
 import com.innerfriends.userprofilepicture.domain.ContentUserProfilePicture;
 import com.innerfriends.userprofilepicture.domain.SupportedMediaType;
 import com.innerfriends.userprofilepicture.domain.UserProfilePicture;
+import com.innerfriends.userprofilepicture.domain.UserProfilePictures;
 import com.innerfriends.userprofilepicture.domain.usecase.*;
 import com.innerfriends.userprofilepicture.infrastructure.usecase.*;
 import org.jboss.resteasy.annotations.providers.multipart.MultipartForm;
@@ -72,7 +73,7 @@ public class UserProfilePictureEndpoint {
     @Consumes("image/jpeg")
     @Path("/{userPseudo}")
     public Response listUserProfilePictures(@PathParam("userPseudo") final String userPseudo) {
-        final List<? extends UserProfilePicture> userProfilePictures = managedListUserProfilPicturesUseCase.execute(
+        final UserProfilePictures userProfilePictures = managedListUserProfilPicturesUseCase.execute(
                 new ListUserProfilPicturesCommand(
                         new JaxRsUserPseudo(userPseudo),
                         SupportedMediaType.IMAGE_JPEG));
