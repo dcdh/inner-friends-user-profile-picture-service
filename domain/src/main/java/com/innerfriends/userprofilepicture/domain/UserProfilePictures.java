@@ -8,4 +8,8 @@ public interface UserProfilePictures {
 
     List<? extends UserProfilePicture> userProfilePictures();
 
+    default boolean canBeStoredInCache() {
+        return featureState().canBeStoredInCache();
+    }
+
 }

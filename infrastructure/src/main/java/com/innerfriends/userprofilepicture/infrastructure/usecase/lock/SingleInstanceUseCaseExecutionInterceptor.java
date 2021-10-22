@@ -1,4 +1,4 @@
-package com.innerfriends.userprofilepicture.infrastructure;
+package com.innerfriends.userprofilepicture.infrastructure.usecase.lock;
 
 import com.innerfriends.userprofilepicture.domain.UseCaseCommand;
 import com.innerfriends.userprofilepicture.domain.UserPseudo;

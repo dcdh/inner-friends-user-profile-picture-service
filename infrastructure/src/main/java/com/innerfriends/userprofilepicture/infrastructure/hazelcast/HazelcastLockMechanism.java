@@ -3,7 +3,7 @@ package com.innerfriends.userprofilepicture.infrastructure.hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.lock.FencedLock;
 import com.innerfriends.userprofilepicture.domain.UserPseudo;
-import com.innerfriends.userprofilepicture.infrastructure.LockMechanism;
+import com.innerfriends.userprofilepicture.infrastructure.usecase.lock.LockMechanism;
 import org.jboss.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;

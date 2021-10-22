@@ -4,7 +4,8 @@ import com.innerfriends.userprofilepicture.domain.UserProfilePictureIdentifier;
 import com.innerfriends.userprofilepicture.domain.UserPseudo;
 import com.innerfriends.userprofilepicture.domain.usecase.MarkUserProfilePictureAsFeaturedCommand;
 import com.innerfriends.userprofilepicture.domain.usecase.MarkUserProfilePictureAsFeaturedUseCase;
-import com.innerfriends.userprofilepicture.infrastructure.LockMechanism;
+import com.innerfriends.userprofilepicture.infrastructure.usecase.cache.UserProfilePicturesCacheRepository;
+import com.innerfriends.userprofilepicture.infrastructure.usecase.lock.LockMechanism;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
 import org.junit.jupiter.api.Test;
@@ -30,6 +31,9 @@ public class ManagedMarkUserProfilePictureAsFeaturedUseCaseTest {
     @InjectMock
     LockMechanism lockMechanism;
 
+    @InjectMock
+    UserProfilePicturesCacheRepository userProfilePicturesCacheRepository;
+
     @Test
     public void should_call_decorated() {
         // Given
@@ -38,11 +42,12 @@ public class ManagedMarkUserProfilePictureAsFeaturedUseCaseTest {
         doReturn(userPseudo).when(markUserProfilePictureAsFeaturedCommand).userPseudo();
         final UserProfilePictureIdentifier userProfilePictureIdentifier = mock(UserProfilePictureIdentifier.class);
         doReturn(new MarkUserProfilePictureAsFeaturedUseCase.DefaultUserProfilePicture(userProfilePictureIdentifier)).when(markUserProfilePictureAsFeaturedUseCase).execute(markUserProfilePictureAsFeaturedCommand);
-        final InOrder inOrder = inOrder(markUserProfilePictureAsFeaturedUseCase, lockMechanism);
+        final InOrder inOrder = inOrder(markUserProfilePictureAsFeaturedUseCase, lockMechanism, userProfilePicturesCacheRepository);
 
         // When && Then
         assertThat(managedMarkUserProfilePictureAsFeaturedUseCase.execute(markUserProfilePictureAsFeaturedCommand)).isEqualTo(new MarkUserProfilePictureAsFeaturedUseCase.DefaultUserProfilePicture(userProfilePictureIdentifier));
         inOrder.verify(lockMechanism, times(1)).lock(userPseudo);
+        inOrder.verify(userProfilePicturesCacheRepository, times(1)).evict(userPseudo);
         inOrder.verify(markUserProfilePictureAsFeaturedUseCase, times(1)).execute(markUserProfilePictureAsFeaturedCommand);
         inOrder.verify(lockMechanism, times(1)).release(userPseudo);
     }

@@ -1,4 +1,4 @@
-package com.innerfriends.userprofilepicture.infrastructure;
+package com.innerfriends.userprofilepicture.infrastructure.usecase.lock;
 
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.ElementType.TYPE;
