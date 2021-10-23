@@ -1,5 +1,7 @@
 package com.innerfriends.userprofilepicture.infrastructure;
 
+import com.hazelcast.core.HazelcastInstance;
+import com.innerfriends.userprofilepicture.infrastructure.hazelcast.HazelcastUserProfilePicturesCacheRepository;
 import io.quarkus.test.junit.QuarkusTest;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.MethodOrderer;
@@ -29,6 +31,9 @@ public class E2ETest {
     @Inject
     S3Client s3Client;
 
+    @Inject
+    HazelcastInstance hazelcastInstance;
+
     @Test
     @Order(0)
     public void should_store_new_user_profile_picture() throws Exception {
@@ -47,6 +52,7 @@ public class E2ETest {
                 .prefix("pseudoE2E.jpeg")
                 .build()).versions();
         assertThat(objectVersions.size()).isEqualTo(1);
+        assertThat(hazelcastInstance.getMap(HazelcastUserProfilePicturesCacheRepository.MAP_NAME).get("pseudoE2E")).isNull();
     }
 
     @Test
@@ -75,6 +81,7 @@ public class E2ETest {
                 .get("/users/pseudoE2E")
                 .then()
                 .statusCode(200);
+        assertThat(hazelcastInstance.getMap(HazelcastUserProfilePicturesCacheRepository.MAP_NAME).get("pseudoE2E")).isNotNull();
     }
 
     @Test
@@ -91,6 +98,7 @@ public class E2ETest {
                 .post(String.format("/users/pseudoE2E/%s/markAsFeatured", objectVersions.get(0).versionId()))
                 .then()
                 .statusCode(200);
+        assertThat(hazelcastInstance.getMap(HazelcastUserProfilePicturesCacheRepository.MAP_NAME).get("pseudoE2E")).isNull();
     }
 
     @Test
@@ -109,6 +117,7 @@ public class E2ETest {
                 .statusCode(200)
                 .extract().path("versionId");
         assertThat(versionId).isEqualTo(objectVersions.get(0).versionId());
+        assertThat(hazelcastInstance.getMap(HazelcastUserProfilePicturesCacheRepository.MAP_NAME).get("pseudoE2E")).isNotNull();
     }
 
     @Test
