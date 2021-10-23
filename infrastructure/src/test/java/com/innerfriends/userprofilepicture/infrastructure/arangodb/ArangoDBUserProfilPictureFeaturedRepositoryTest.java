@@ -2,7 +2,9 @@ package com.innerfriends.userprofilepicture.infrastructure.arangodb;
 
 import com.arangodb.ArangoDB;
 import com.innerfriends.userprofilepicture.domain.*;
+import com.innerfriends.userprofilepicture.infrastructure.opentelemetry.OpenTelemetryTracingService;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.mockito.InjectMock;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,6 +17,9 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 @QuarkusTest
 public class ArangoDBUserProfilPictureFeaturedRepositoryTest {
@@ -29,6 +34,9 @@ public class ArangoDBUserProfilPictureFeaturedRepositoryTest {
 
     @ConfigProperty(name = "arangodb.dbName")
     String dbName;
+
+    @InjectMock
+    OpenTelemetryTracingService openTelemetryTracingService;
 
     @BeforeEach
     @AfterEach
@@ -66,6 +74,8 @@ public class ArangoDBUserProfilPictureFeaturedRepositoryTest {
         assertThat(userProfilePictureIdentifier.userPseudo().pseudo()).isEqualTo("pseudo");
         assertThat(userProfilePictureIdentifier.mediaType()).isEqualTo(SupportedMediaType.IMAGE_JPEG);
         assertThat(userProfilePictureIdentifier.versionId().version()).isEqualTo("v0");
+        verify(openTelemetryTracingService, times(1)).startANewSpan(any());
+        verify(openTelemetryTracingService, times(1)).endSpan(any());
     }
 
     @Test
@@ -114,6 +124,8 @@ public class ArangoDBUserProfilPictureFeaturedRepositoryTest {
         assertThat(userProfilePictureIdentifier.get().userPseudo().pseudo()).isEqualTo("pseudo");
         assertThat(userProfilePictureIdentifier.get().mediaType()).isEqualTo(SupportedMediaType.IMAGE_JPEG);
         assertThat(userProfilePictureIdentifier.get().versionId().version()).isEqualTo("v0");
+        verify(openTelemetryTracingService, times(1)).startANewSpan(any());
+        verify(openTelemetryTracingService, times(1)).endSpan(any());
     }
 
     @Test

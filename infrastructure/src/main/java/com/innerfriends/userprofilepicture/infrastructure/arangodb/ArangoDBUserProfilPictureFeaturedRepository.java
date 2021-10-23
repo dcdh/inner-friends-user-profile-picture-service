@@ -9,6 +9,7 @@ import com.innerfriends.userprofilepicture.domain.UserProfilPictureFeaturedRepos
 import com.innerfriends.userprofilepicture.domain.UserProfilPictureFeaturedRepositoryException;
 import com.innerfriends.userprofilepicture.domain.UserProfilePictureIdentifier;
 import com.innerfriends.userprofilepicture.domain.UserPseudo;
+import com.innerfriends.userprofilepicture.infrastructure.opentelemetry.NewSpan;
 import io.quarkus.runtime.StartupEvent;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.context.ManagedExecutor;
@@ -39,7 +40,7 @@ public class ArangoDBUserProfilPictureFeaturedRepository implements UserProfilPi
         this.managedExecutor = Objects.requireNonNull(managedExecutor);
     }
 
-    // TODO span interceptor
+    @NewSpan
     @Override
     public Optional<UserProfilePictureIdentifier> getFeatured(final UserPseudo userPseudo) throws UserProfilPictureFeaturedRepositoryException {
         try {
@@ -50,7 +51,7 @@ public class ArangoDBUserProfilPictureFeaturedRepository implements UserProfilPi
         }
     }
 
-    // TODO span interceptor
+    @NewSpan
     @Override
     public UserProfilePictureIdentifier markAsFeatured(final UserProfilePictureIdentifier userProfilePictureIdentifier) throws UserProfilPictureFeaturedRepositoryException {
         try {

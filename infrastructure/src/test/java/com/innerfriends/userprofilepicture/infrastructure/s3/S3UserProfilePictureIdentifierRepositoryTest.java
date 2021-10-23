@@ -1,6 +1,7 @@
 package com.innerfriends.userprofilepicture.infrastructure.s3;
 
 import com.innerfriends.userprofilepicture.domain.*;
+import com.innerfriends.userprofilepicture.infrastructure.opentelemetry.OpenTelemetryTracingService;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
 import io.quarkus.test.junit.mockito.InjectSpy;
@@ -36,6 +37,9 @@ public class S3UserProfilePictureIdentifierRepositoryTest {
 
     @InjectMock
     S3ObjectKeyProvider s3ObjectKeyProvider;
+
+    @InjectMock
+    OpenTelemetryTracingService openTelemetryTracingService;
 
     @ConfigProperty(name = "bucket.user.profile.picture.name")
     String bucketUserProfilePictureName;
@@ -113,6 +117,8 @@ public class S3UserProfilePictureIdentifierRepositoryTest {
         assertThat(objectVersions.get(0).key()).isEqualTo("userPseudo.jpeg");
 
         verify(s3Client, times(1)).putObject(any(PutObjectRequest.class), any(RequestBody.class));
+        verify(openTelemetryTracingService, times(1)).startANewSpan(any());
+        verify(openTelemetryTracingService, times(1)).endSpan(any());
     }
 
     @Test
@@ -162,6 +168,9 @@ public class S3UserProfilePictureIdentifierRepositoryTest {
         assertThat(objectVersions.size()).isEqualTo(0);
 
         verify(s3Client, times(1)).putObject(any(PutObjectRequest.class), any(RequestBody.class));
+        verify(openTelemetryTracingService, times(1)).startANewSpan(any());
+        verify(openTelemetryTracingService, times(1)).markSpanInError(any(), any());
+        verify(openTelemetryTracingService, times(1)).endSpan(any());
     }
 
     private static class TestUserProfilePictureIdentifier implements UserProfilePictureIdentifier {
@@ -211,6 +220,8 @@ public class S3UserProfilePictureIdentifierRepositoryTest {
         assertThat(contentUserProfilePicture.contentLength()).isEqualTo(7l);
         assertThat(contentUserProfilePicture.versionId().version()).isEqualTo(versionId);
         verify(s3Client, times(1)).getObject(any(GetObjectRequest.class), any(ResponseTransformer.class));
+        verify(openTelemetryTracingService, times(1)).startANewSpan(any());
+        verify(openTelemetryTracingService, times(1)).endSpan(any());
     }
 
     @Test
@@ -228,6 +239,9 @@ public class S3UserProfilePictureIdentifierRepositoryTest {
         assertThatThrownBy(() -> s3UserProfilePictureRepository.getContent(userProfilePictureIdentifier))
                 .isInstanceOf(UserProfilePictureUnknownException.class);
         verify(s3Client, times(1)).getObject(any(GetObjectRequest.class), any(ResponseTransformer.class));
+        verify(openTelemetryTracingService, times(1)).startANewSpan(any());
+        verify(openTelemetryTracingService, times(1)).markSpanInError(any(), any());
+        verify(openTelemetryTracingService, times(1)).endSpan(any());
     }
 
     @Test
@@ -245,6 +259,9 @@ public class S3UserProfilePictureIdentifierRepositoryTest {
         assertThatThrownBy(() -> s3UserProfilePictureRepository.getContent(userProfilePictureIdentifier))
                 .isInstanceOf(UserProfilePictureRepositoryException.class);
         verify(s3Client, times(1)).getObject(any(GetObjectRequest.class), any(ResponseTransformer.class));
+        verify(openTelemetryTracingService, times(1)).startANewSpan(any());
+        verify(openTelemetryTracingService, times(1)).markSpanInError(any(), any());
+        verify(openTelemetryTracingService, times(1)).endSpan(any());
     }
 
     @Test
@@ -269,6 +286,8 @@ public class S3UserProfilePictureIdentifierRepositoryTest {
         assertThat(userProfilePicturesIdentifier.get(0).mediaType()).isEqualTo(SupportedMediaType.IMAGE_JPEG);
         assertThat(userProfilePicturesIdentifier.get(0).versionId().version()).isEqualTo(versionId);
         verify(s3Client, times(1)).listObjectVersions(any(ListObjectVersionsRequest.class));
+        verify(openTelemetryTracingService, times(1)).startANewSpan(any());
+        verify(openTelemetryTracingService, times(1)).endSpan(any());
     }
 
     @Test
@@ -304,6 +323,8 @@ public class S3UserProfilePictureIdentifierRepositoryTest {
         assertThat(firstObjectVersion.versionId()).isEqualTo(userProfilePictureIdentifier.get().versionId().version());
         assertThat(firstObjectVersion.isLatest()).isEqualTo(false);
         verify(s3Client, atLeastOnce()).listObjectVersions(any(ListObjectVersionsRequest.class));
+        verify(openTelemetryTracingService, times(1)).startANewSpan(any());
+        verify(openTelemetryTracingService, times(1)).endSpan(any());
     }
 
     @Test

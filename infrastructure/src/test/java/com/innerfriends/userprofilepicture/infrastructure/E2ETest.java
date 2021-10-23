@@ -1,8 +1,11 @@
 package com.innerfriends.userprofilepicture.infrastructure;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.hazelcast.core.HazelcastInstance;
 import com.innerfriends.userprofilepicture.infrastructure.hazelcast.HazelcastUserProfilePicturesCacheRepository;
+import com.innerfriends.userprofilepicture.infrastructure.resources.OpenTelemetryLifecycleManager;
 import io.quarkus.test.junit.QuarkusTest;
+import io.restassured.http.ContentType;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -15,11 +18,15 @@ import software.amazon.awssdk.services.s3.model.ObjectVersion;
 import javax.inject.Inject;
 import java.io.File;
 import java.net.URL;
+import java.time.Duration;
 import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 @QuarkusTest
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -33,6 +40,90 @@ public class E2ETest {
 
     @Inject
     HazelcastInstance hazelcastInstance;
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static final class Traces {
+
+        public List<Data> data;
+
+        public List<String> getOperationNames() {
+            return data
+                    .stream()
+                    .flatMap(d -> d.getSpans().stream())
+                    .map(Span::getOperationName)
+                    .collect(Collectors.toList());
+        }
+
+        public List<String> getOperationNamesInError() {
+            return data
+                    .stream()
+                    .flatMap(d -> d.getSpans().stream())
+                    .filter(Span::inError)
+                    .map(Span::getOperationName)
+                    .collect(Collectors.toList());
+        }
+
+        public List<Integer> getHttpStatus() {
+            return data
+                    .stream()
+                    .flatMap(d -> d.getSpans().stream())
+                    .flatMap(s -> s.httpStatus().stream())
+                    .collect(Collectors.toList());
+        }
+
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static final class Data {
+
+        public List<Span> spans;
+
+        public List<Span> getSpans() {
+            return spans;
+        }
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static final class Span {
+
+        public String operationName;
+        public List<Tag> tags;
+
+        public String getOperationName() {
+            return operationName;
+        }
+
+        public boolean inError() {
+            return tags.stream().anyMatch(Tag::inError);
+        }
+
+        public List<Integer> httpStatus() {
+            return tags.stream()
+                    .map(t -> t.httpStatus())
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+        }
+
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static final class Tag {
+
+        public String key;
+        public Object value;
+
+        public boolean inError() {
+            return "error".equals(key) && Boolean.TRUE.equals(value);
+        }
+
+        public Integer httpStatus() {
+            if ("http.status_code".equals(key)) {
+                return (Integer) value;
+            }
+            return null;
+        }
+
+    }
 
     @Test
     @Order(0)
@@ -53,11 +144,19 @@ public class E2ETest {
                 .build()).versions();
         assertThat(objectVersions.size()).isEqualTo(1);
         assertThat(hazelcastInstance.getMap(HazelcastUserProfilePicturesCacheRepository.MAP_NAME).get("pseudoE2E")).isNull();
+        final Traces traces = getTraces("/users/pseudoE2E/storeNewUserProfilePicture");
+        assertThat(traces.getOperationNames()).containsExactlyInAnyOrder("users/{userPseudo}/storeNewUserProfilePicture",
+                "HazelcastLockMechanism:lock",
+                "HazelcastUserProfilePicturesCacheRepository:evict",
+                "S3UserProfilePictureRepository:storeNewUserProfilePicture",
+                "HazelcastLockMechanism:release");
+        assertThat(traces.getHttpStatus()).containsExactlyInAnyOrder(201);
+        assertThat(traces.getOperationNamesInError()).isEmpty();
     }
 
     @Test
     @Order(1)
-    public void should_download_user_profile_picture_by_version_id() {
+    public void should_download_user_profile_picture_by_version_id() throws Exception {
         final String versionId = s3Client.listObjectVersions(ListObjectVersionsRequest
                 .builder()
                 .bucket(bucketUserProfilePictureName)
@@ -70,11 +169,16 @@ public class E2ETest {
                 .get("/users/pseudoE2E/version/{versionId}/content", versionId)
                 .then()
                 .statusCode(200);
+        final Traces traces = getTraces(String.format("/users/pseudoE2E/version/%s/content", versionId));
+        assertThat(traces.getOperationNames()).containsExactlyInAnyOrder("users/{userPseudo}/version/{versionId}/content",
+                "S3UserProfilePictureRepository:getContent");
+        assertThat(traces.getHttpStatus()).containsExactlyInAnyOrder(200);
+        assertThat(traces.getOperationNamesInError()).isEmpty();
     }
 
     @Test
     @Order(2)
-    public void should_list_user_profile_pictures() {
+    public void should_list_user_profile_pictures() throws Exception {
         given()
                 .header("Content-Type", "image/jpeg")
                 .when()
@@ -82,11 +186,21 @@ public class E2ETest {
                 .then()
                 .statusCode(200);
         assertThat(hazelcastInstance.getMap(HazelcastUserProfilePicturesCacheRepository.MAP_NAME).get("pseudoE2E")).isNotNull();
+        final Traces traces = getTraces("/users/pseudoE2E");
+        assertThat(traces.getOperationNames()).containsExactlyInAnyOrder("users/{userPseudo}",
+                "HazelcastLockMechanism:lock",
+                "HazelcastUserProfilePicturesCacheRepository:get",
+                "S3UserProfilePictureRepository:listByUserPseudoAndMediaType",
+                "ArangoDBUserProfilPictureFeaturedRepository:getFeatured",
+                "HazelcastUserProfilePicturesCacheRepository:store",
+                "HazelcastLockMechanism:release");
+        assertThat(traces.getHttpStatus()).containsExactlyInAnyOrder(200);
+        assertThat(traces.getOperationNamesInError()).isEmpty();
     }
 
     @Test
     @Order(3)
-    public void should_mark_as_featured() {
+    public void should_mark_as_featured() throws Exception {
         final List<ObjectVersion> objectVersions = s3Client.listObjectVersions(ListObjectVersionsRequest
                 .builder()
                 .bucket(bucketUserProfilePictureName)
@@ -99,6 +213,14 @@ public class E2ETest {
                 .then()
                 .statusCode(200);
         assertThat(hazelcastInstance.getMap(HazelcastUserProfilePicturesCacheRepository.MAP_NAME).get("pseudoE2E")).isNull();
+        final Traces traces = getTraces(String.format("/users/pseudoE2E/%s/markAsFeatured", objectVersions.get(0).versionId()));
+        assertThat(traces.getOperationNames()).containsExactlyInAnyOrder("users/{userPseudo}/{versionId}/markAsFeatured",
+                "HazelcastLockMechanism:lock",
+                "HazelcastUserProfilePicturesCacheRepository:evict",
+                "ArangoDBUserProfilPictureFeaturedRepository:markAsFeatured",
+                "HazelcastLockMechanism:release");
+        assertThat(traces.getHttpStatus()).containsExactlyInAnyOrder(200);
+        assertThat(traces.getOperationNamesInError()).isEmpty();
     }
 
     @Test
@@ -118,6 +240,15 @@ public class E2ETest {
                 .extract().path("versionId");
         assertThat(versionId).isEqualTo(objectVersions.get(0).versionId());
         assertThat(hazelcastInstance.getMap(HazelcastUserProfilePicturesCacheRepository.MAP_NAME).get("pseudoE2E")).isNotNull();
+        final Traces traces = getTraces("/users/pseudoE2E/featured");
+        assertThat(traces.getOperationNames()).containsExactlyInAnyOrder("users/{userPseudo}/featured",
+                "HazelcastLockMechanism:lock",
+                "HazelcastUserProfilePicturesCacheRepository:get",
+                "ArangoDBUserProfilPictureFeaturedRepository:getFeatured",
+                "HazelcastUserProfilePicturesCacheRepository:storeFeatured",
+                "HazelcastLockMechanism:release");
+        assertThat(traces.getHttpStatus()).containsExactlyInAnyOrder(200);
+        assertThat(traces.getOperationNamesInError()).isEmpty();
     }
 
     @Test
@@ -137,6 +268,39 @@ public class E2ETest {
         final ClassLoader classLoader = getClass().getClassLoader();
         final URL resource = classLoader.getResource(fileName);
         return new File(resource.toURI());
+    }
+
+    private Traces getTraces(final String httpTargetValue) throws Exception {
+        final Integer hostPort = OpenTelemetryLifecycleManager.getJaegerRestApiHostPort();
+        await().atMost(15, TimeUnit.SECONDS)
+                .pollInterval(Duration.ofSeconds(1l))
+                .until(() -> {
+                    final Traces traces = given()
+                            .when()
+                            .queryParam("limit", "1")
+                            .queryParam("service", "user-profile-picture")
+                            .queryParam("tags", "{\"http.target\":\""+httpTargetValue+"\"}")
+                            .get(new URL(String.format("http://localhost:%d/api/traces", hostPort)))
+                            .then()
+                            .log().all()
+                            .contentType(ContentType.JSON)
+                            .extract()
+                            .body().as(Traces.class);
+                    if (traces.getOperationNames().isEmpty()) {
+                        return false;
+                    }
+                    return true;
+                });
+        return given()
+                .when()
+                .queryParam("limit", "1")
+                .queryParam("service", "user-profile-picture")
+                .queryParam("tags", "{\"http.target\":\""+httpTargetValue+"\"}")
+                .get(new URL(String.format("http://localhost:%d/api/traces", hostPort)))
+                .then()
+                .log().all()
+                .extract()
+                .body().as(Traces.class);
     }
 
 }

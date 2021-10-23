@@ -3,8 +3,10 @@ package com.innerfriends.userprofilepicture.infrastructure.hazelcast;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hazelcast.core.HazelcastInstance;
 import com.innerfriends.userprofilepicture.domain.*;
+import com.innerfriends.userprofilepicture.infrastructure.opentelemetry.OpenTelemetryTracingService;
 import com.innerfriends.userprofilepicture.infrastructure.usecase.cache.CachedUserProfilePictures;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.mockito.InjectMock;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,6 +34,9 @@ public class HazelcastUserProfilePicturesCacheRepositoryTest {
 
     @Inject
     HazelcastInstance hazelcastInstance;
+
+    @InjectMock
+    OpenTelemetryTracingService openTelemetryTracingService;
 
     @BeforeEach
     @AfterEach
@@ -76,6 +81,8 @@ public class HazelcastUserProfilePicturesCacheRepositoryTest {
                                 .setMediaType(SupportedMediaType.IMAGE_JPEG)
                                 .setVersionId("v0").build())
                 .build());
+        verify(openTelemetryTracingService, times(1)).startANewSpan(any());
+        verify(openTelemetryTracingService, times(1)).endSpan(any());
     }
 
     @Test
@@ -119,6 +126,8 @@ public class HazelcastUserProfilePicturesCacheRepositoryTest {
         assertThat(objectMapper.readValue(
                 (String) hazelcastInstance.getMap(HazelcastUserProfilePicturesCacheRepository.MAP_NAME).get("user"), HazelcastCachedUserProfilePictures.class))
                 .isEqualTo(expectedHazelcastCachedUserProfilePicture);
+        verify(openTelemetryTracingService, times(1)).startANewSpan(any());
+        verify(openTelemetryTracingService, times(1)).endSpan(any());
     }
 
     @Test
@@ -256,6 +265,8 @@ public class HazelcastUserProfilePicturesCacheRepositoryTest {
 
         // Then
         assertThat(hazelcastInstance.getMap(HazelcastUserProfilePicturesCacheRepository.MAP_NAME).get("user")).isNull();
+        verify(openTelemetryTracingService, times(1)).startANewSpan(any());
+        verify(openTelemetryTracingService, times(1)).endSpan(any());
     }
 
     private List<UserProfilePicture> buildUserProfilePicture(final int nbOfPictures) {

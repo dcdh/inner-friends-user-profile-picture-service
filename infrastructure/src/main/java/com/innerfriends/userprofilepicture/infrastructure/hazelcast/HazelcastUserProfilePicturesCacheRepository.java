@@ -6,6 +6,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.innerfriends.userprofilepicture.domain.UserProfilePictureIdentifier;
 import com.innerfriends.userprofilepicture.domain.UserProfilePictures;
 import com.innerfriends.userprofilepicture.domain.UserPseudo;
+import com.innerfriends.userprofilepicture.infrastructure.opentelemetry.NewSpan;
 import com.innerfriends.userprofilepicture.infrastructure.usecase.cache.CachedUserProfilePictures;
 import com.innerfriends.userprofilepicture.infrastructure.usecase.cache.UserProfilePicturesCacheRepository;
 import org.jboss.logging.Logger;
@@ -29,7 +30,7 @@ public class HazelcastUserProfilePicturesCacheRepository implements UserProfileP
         this.hazelcastInstance = hazelcastInstance;
     }
 
-    // TODO span interceptor
+    @NewSpan
     @Override
     public Optional<CachedUserProfilePictures> get(final UserPseudo userPseudo) {
         return Optional.ofNullable(hazelcastInstance.getMap(MAP_NAME).get(userPseudo.pseudo()))
@@ -37,7 +38,7 @@ public class HazelcastUserProfilePicturesCacheRepository implements UserProfileP
                 .map(value -> readFromJson(value));
     }
 
-    // TODO span interceptor
+    @NewSpan
     @Override
     public void store(final UserPseudo userPseudo, final UserProfilePictures userProfilePictures) {
         if (userProfilePictures.canBeStoredInCache()) {
@@ -54,7 +55,7 @@ public class HazelcastUserProfilePicturesCacheRepository implements UserProfileP
         }
     }
 
-    // TODO span interceptor
+    @NewSpan
     @Override
     public void storeFeatured(final UserPseudo userPseudo, final UserProfilePictureIdentifier featured) {
         final HazelcastCachedUserProfilePictures hazelcastCachedUserProfilePictures = Optional.ofNullable(hazelcastInstance.getMap(MAP_NAME).get(userPseudo.pseudo()))
@@ -66,7 +67,7 @@ public class HazelcastUserProfilePicturesCacheRepository implements UserProfileP
                 writeFrom(hazelcastCachedUserProfilePictures));
     }
 
-    // TODO span interceptor
+    @NewSpan
     @Override
     public void evict(final UserPseudo userPseudo) {
         hazelcastInstance.getMap(MAP_NAME).remove(userPseudo.pseudo());

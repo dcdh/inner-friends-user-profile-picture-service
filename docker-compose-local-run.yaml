@@ -26,6 +26,25 @@ services:
       - 5701:5701
       - 8088:8080
 
+  jaeger-all-in-one:
+    image: jaegertracing/all-in-one:1.25.0
+    ports:
+      - "16686:16686"
+      - "14268"
+      - "14250"
+
+  otel-collector:
+    image: otel/opentelemetry-collector:0.33.0
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    ports:
+      - "13133:13133" # Health_check extension
+      - "4317"        # OTLP gRPC receiver
+      - "55680:55680" # OTLP gRPC receiver alternative port
+    depends_on:
+      - jaeger-all-in-one
+
   inner-friends-user-profile-picture-service:
     image: damdamdeo/inner-friends-user-profile-picture-service
     ports:
@@ -39,8 +58,11 @@ services:
       - arangodb.dbName=friends
       - quarkus.hazelcast-client.cluster-name=dev
       - quarkus.hazelcast-client.cluster-members=hazelcast:5701
+      - quarkus.opentelemetry.tracer.exporter.otlp.endpoint=http://otel-collector:55680
     depends_on:
       - zenko
       - arangodb
       - hazelcast
+      - jaeger-all-in-one
+      - otel-collector
     restart: unless-stopped

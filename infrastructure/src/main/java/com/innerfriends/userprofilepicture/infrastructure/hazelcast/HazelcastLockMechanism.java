@@ -3,6 +3,7 @@ package com.innerfriends.userprofilepicture.infrastructure.hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.lock.FencedLock;
 import com.innerfriends.userprofilepicture.domain.UserPseudo;
+import com.innerfriends.userprofilepicture.infrastructure.opentelemetry.NewSpan;
 import com.innerfriends.userprofilepicture.infrastructure.usecase.lock.LockMechanism;
 import org.jboss.logging.Logger;
 
@@ -20,14 +21,14 @@ public class HazelcastLockMechanism implements LockMechanism {
         this.hazelcastInstance = hazelcastInstance;
     }
 
-    // TODO span interceptor
+    @NewSpan
     @Override
     public void lock(final UserPseudo userPseudo) {
         final FencedLock fencedLock = hazelcastInstance.getCPSubsystem().getLock(userPseudo.pseudo());
         fencedLock.lock();
     }
 
-    // TODO span interceptor
+    @NewSpan
     @Override
     public void release(final UserPseudo userPseudo) {
         final FencedLock fencedLock = hazelcastInstance.getCPSubsystem().getLock(userPseudo.pseudo());

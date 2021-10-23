@@ -1,6 +1,7 @@
 package com.innerfriends.userprofilepicture.infrastructure.s3;
 
 import com.innerfriends.userprofilepicture.domain.*;
+import com.innerfriends.userprofilepicture.infrastructure.opentelemetry.NewSpan;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +35,7 @@ public class S3UserProfilePictureRepository implements UserProfilePictureReposit
         this.s3ObjectKeyProvider = Objects.requireNonNull(s3ObjectKeyProvider);
     }
 
-    // TODO span interceptor
+    @NewSpan
     @Override
     public UserProfilePictureIdentifier storeNewUserProfilePicture(final NewUserProfilePicture newUserProfilePicture) throws UserProfilePictureRepositoryException {
         final PutObjectRequest putObjectRequest = PutObjectRequest.builder()
@@ -54,7 +55,7 @@ public class S3UserProfilePictureRepository implements UserProfilePictureReposit
         }
     }
 
-    // TODO span interceptor
+    @NewSpan
     @Override
     public ContentUserProfilePicture getContent(final UserProfilePictureIdentifier userProfilePictureIdentifier)
             throws UserProfilePictureUnknownException, UserProfilePictureRepositoryException {
@@ -75,7 +76,7 @@ public class S3UserProfilePictureRepository implements UserProfilePictureReposit
         }
     }
 
-    // TODO span interceptor
+    @NewSpan
     @Override
     public List<? extends UserProfilePictureIdentifier> listByUserPseudoAndMediaType(final UserPseudo userPseudo, final SupportedMediaType mediaType)
             throws UserProfilePictureRepositoryException {
@@ -90,7 +91,7 @@ public class S3UserProfilePictureRepository implements UserProfilePictureReposit
                 .collect(Collectors.toList());
     }
 
-    // TODO span interceptor
+    @NewSpan
     @Override
     public Optional<UserProfilePictureIdentifier> getFirst(final UserPseudo userPseudo, final SupportedMediaType mediaType) throws UserProfilePictureRepositoryException {
         final ListObjectVersionsRequest listObjectVersionsRequest = ListObjectVersionsRequest.builder()
