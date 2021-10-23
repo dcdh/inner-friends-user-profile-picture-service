@@ -43,6 +43,12 @@ public class Application {
         return new GetFeaturedUserProfilePictureUseCase(userProfilePictureRepository, userProfilPictureFeaturedRepository);
     }
 
+    @Produces
+    @ApplicationScoped
+    public CreateDamdamdeoProfilePictureUseCase createDamdamdeoProfilePictureUseCaseProducer(final UserProfilePictureRepository userProfilePictureRepository) {
+        return new CreateDamdamdeoProfilePictureUseCase(userProfilePictureRepository);
+    }
+
     @ApplicationScoped
     @Produces
     public S3ObjectKeyProvider s3ObjectKeyProvider() {

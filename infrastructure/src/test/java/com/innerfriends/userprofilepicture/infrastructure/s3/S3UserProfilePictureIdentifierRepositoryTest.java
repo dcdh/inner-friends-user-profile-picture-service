@@ -47,7 +47,9 @@ public class S3UserProfilePictureIdentifierRepositoryTest {
                 .builder()
                 .bucket(bucketUserProfilePictureName)
                 .build()).versions();
-        objectVersions.stream().forEach(objectVersion -> {
+        objectVersions.stream()
+                .filter(objectVersion -> !objectVersion.key().equals("Damdamdeo.jpeg"))
+                .forEach(objectVersion -> {
             System.out.println("Delete s3 object " + objectVersion);
             s3Client.deleteObjects(DeleteObjectsRequest.builder()
                     .bucket(bucketUserProfilePictureName)

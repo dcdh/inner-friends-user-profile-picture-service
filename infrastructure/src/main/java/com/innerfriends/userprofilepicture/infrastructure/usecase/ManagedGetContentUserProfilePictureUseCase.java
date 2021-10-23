@@ -19,7 +19,6 @@ public class ManagedGetContentUserProfilePictureUseCase implements UseCase<Conte
 
     @Override
     public ContentUserProfilePicture execute(final GetContentUserProfilePictureCommand command) {
-        // TODO cache
         return getContentUserProfilePictureUseCase.execute(command);
     }
 

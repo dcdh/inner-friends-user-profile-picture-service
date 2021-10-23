@@ -50,7 +50,7 @@ public class UserProfilePictureEndpoint {
     }
 
     @GET
-    @Consumes("image/jpeg")
+    @Consumes({"image/jpeg", "image/jpg"})
     @Path("/{userPseudo}/version/{versionId}/content")
     public Response getJpegContentUserProfilePicture(@PathParam("userPseudo") final String userPseudo,
                                                      @PathParam("versionId") final String versionId) {
@@ -70,7 +70,7 @@ public class UserProfilePictureEndpoint {
     }
 
     @GET
-    @Consumes("image/jpeg")
+    @Consumes({"image/jpeg", "image/jpg"})
     @Path("/{userPseudo}")
     public Response listUserProfilePictures(@PathParam("userPseudo") final String userPseudo) {
         final UserProfilePictures userProfilePictures = managedListUserProfilPicturesUseCase.execute(
@@ -83,7 +83,7 @@ public class UserProfilePictureEndpoint {
 
     @POST
     @Path("/{userPseudo}/{versionId}/markAsFeatured")
-    @Consumes("image/jpeg")
+    @Consumes({"image/jpeg", "image/jpg"})
     public Response markUserProfilePictureAsFeatured(@PathParam("userPseudo") final String userPseudo,
                                                      @PathParam("versionId") final String versionId) {
         final UserProfilePicture userProfilePicture = managedMarkUserProfilePictureAsFeaturedUseCase.execute(
@@ -95,7 +95,7 @@ public class UserProfilePictureEndpoint {
     }
 
     @GET
-    @Consumes("image/jpeg")
+    @Consumes({"image/jpeg", "image/jpg"})
     @Path("/{userPseudo}/featured")
     public Response getFeaturedUserProfilePicture(@PathParam("userPseudo") final String userPseudo) {
          final UserProfilePicture userProfilePicture = managedGetFeaturedUserProfilePictureUseCase.execute(

@@ -5,6 +5,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.*;
 
+import javax.annotation.Priority;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
 import java.util.Objects;
@@ -21,7 +22,7 @@ public class S3Initializer {
         this.bucketUserProfilePictureName = Objects.requireNonNull(bucketUserProfilePictureName);
     }
 
-    public void onStartup(@Observes final StartupEvent startupEvent) {
+    public void onStartup(@Observes @Priority(1) final StartupEvent startupEvent) {
         if (s3client.listBuckets().buckets().stream().map(Bucket::name).noneMatch(name -> bucketUserProfilePictureName.equals(name))) {
             s3client.createBucket(CreateBucketRequest.builder().bucket(bucketUserProfilePictureName).build());
         }

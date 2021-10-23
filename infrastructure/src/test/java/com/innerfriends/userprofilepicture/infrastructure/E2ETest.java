@@ -14,6 +14,7 @@ import javax.inject.Inject;
 import java.io.File;
 import java.net.URL;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -108,6 +109,19 @@ public class E2ETest {
                 .statusCode(200)
                 .extract().path("versionId");
         assertThat(versionId).isEqualTo(objectVersions.get(0).versionId());
+    }
+
+    @Test
+    @Order(5)
+    public void should_have_stored_Damdamdeo_picture() {
+        final List<String> objectVersionsKey = s3Client.listObjectVersions(ListObjectVersionsRequest
+                .builder()
+                .bucket(bucketUserProfilePictureName)
+                .build())
+                .versions()
+                .stream().map(ObjectVersion::key)
+                .collect(Collectors.toList());
+        assertThat(objectVersionsKey).contains("Damdamdeo.jpeg");
     }
 
     private File getFileFromResource(final String fileName) throws Exception {
