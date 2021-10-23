@@ -4,13 +4,14 @@ import com.innerfriends.userprofilepicture.domain.FeatureState;
 import com.innerfriends.userprofilepicture.domain.UserProfilePictureIdentifier;
 import com.innerfriends.userprofilepicture.domain.UserPseudo;
 import com.innerfriends.userprofilepicture.infrastructure.usecase.cache.CachedUserProfilePictures;
+import io.quarkus.runtime.annotations.RegisterForReflection;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public final class HazelcastCachedUserProfilePictures implements CachedUserProfilePictures, Serializable {
+@RegisterForReflection
+public final class HazelcastCachedUserProfilePictures implements CachedUserProfilePictures {
 
     public String userPseudo;
     public List<HazelcastUserProfilePictureIdentifier> userProfilePictureIdentifiers;

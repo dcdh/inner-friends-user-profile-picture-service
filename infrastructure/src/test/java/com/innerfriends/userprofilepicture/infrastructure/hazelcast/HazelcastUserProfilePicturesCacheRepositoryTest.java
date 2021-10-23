@@ -1,5 +1,6 @@
 package com.innerfriends.userprofilepicture.infrastructure.hazelcast;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hazelcast.core.HazelcastInstance;
 import com.innerfriends.userprofilepicture.domain.*;
 import com.innerfriends.userprofilepicture.infrastructure.usecase.cache.CachedUserProfilePictures;
@@ -24,6 +25,8 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 public class HazelcastUserProfilePicturesCacheRepositoryTest {
 
+    private final static ObjectMapper objectMapper = new ObjectMapper();
+
     @Inject
     HazelcastUserProfilePicturesCacheRepository hazelcastUserProfilePicturesCacheRepository;
 
@@ -37,7 +40,7 @@ public class HazelcastUserProfilePicturesCacheRepositoryTest {
     }
 
     @Test
-    public void should_get_return_stored_cached_user_profile_picture() {
+    public void should_get_return_stored_cached_user_profile_picture() throws Exception {
         // Given
         final CachedUserProfilePictures givenCachedUserProfilePictures = HazelcastCachedUserProfilePictures.newBuilder()
                 .setUserPseudo("user")
@@ -52,7 +55,8 @@ public class HazelcastUserProfilePicturesCacheRepositoryTest {
                                 .setMediaType(SupportedMediaType.IMAGE_JPEG)
                                 .setVersionId("v0").build())
                 .build();
-        hazelcastInstance.getMap(HazelcastUserProfilePicturesCacheRepository.MAP_NAME).put("user", givenCachedUserProfilePictures);
+        hazelcastInstance.getMap(HazelcastUserProfilePicturesCacheRepository.MAP_NAME).put("user",
+                objectMapper.writeValueAsString(givenCachedUserProfilePictures));
 
         // When
         final Optional<CachedUserProfilePictures> cachedUserProfilePictures = hazelcastUserProfilePicturesCacheRepository.get(() -> "user");
@@ -87,12 +91,13 @@ public class HazelcastUserProfilePicturesCacheRepositoryTest {
     }
 
     @Test
-    public void should_store_featured_profile_picture_when_user_profile_picture_in_cache() {
+    public void should_store_featured_profile_picture_when_user_profile_picture_in_cache() throws Exception {
         // Given
         final CachedUserProfilePictures givenCachedUserProfilePictures = HazelcastCachedUserProfilePictures.newBuilder()
                 .setUserPseudo("user")
                 .build();
-        hazelcastInstance.getMap(HazelcastUserProfilePicturesCacheRepository.MAP_NAME).put("user", givenCachedUserProfilePictures);
+        hazelcastInstance.getMap(HazelcastUserProfilePicturesCacheRepository.MAP_NAME).put("user",
+                objectMapper.writeValueAsString(givenCachedUserProfilePictures));
 
         // When
         hazelcastUserProfilePicturesCacheRepository.storeFeatured(() -> "user",
@@ -111,12 +116,13 @@ public class HazelcastUserProfilePicturesCacheRepositoryTest {
                                 .setVersionId("v0").build())
                 .build();
 
-        assertThat(hazelcastInstance.getMap(HazelcastUserProfilePicturesCacheRepository.MAP_NAME).get("user"))
+        assertThat(objectMapper.readValue(
+                (String) hazelcastInstance.getMap(HazelcastUserProfilePicturesCacheRepository.MAP_NAME).get("user"), HazelcastCachedUserProfilePictures.class))
                 .isEqualTo(expectedHazelcastCachedUserProfilePicture);
     }
 
     @Test
-    public void should_store_featured_profile_picture_when_user_profile_picture_not_in_cache() {
+    public void should_store_featured_profile_picture_when_user_profile_picture_not_in_cache() throws Exception {
         // Given
 
         // When
@@ -136,7 +142,8 @@ public class HazelcastUserProfilePicturesCacheRepositoryTest {
                                 .setVersionId("v0").build())
                 .build();
 
-        assertThat(hazelcastInstance.getMap(HazelcastUserProfilePicturesCacheRepository.MAP_NAME).get("user"))
+        assertThat(objectMapper.readValue(
+                (String) hazelcastInstance.getMap(HazelcastUserProfilePicturesCacheRepository.MAP_NAME).get("user"), HazelcastCachedUserProfilePictures.class))
                 .isEqualTo(expectedHazelcastCachedUserProfilePicture);
     }
 
@@ -155,7 +162,7 @@ public class HazelcastUserProfilePicturesCacheRepositoryTest {
     }
 
     @Test
-    public void should_store_profile_picture_identifier_when_user_profile_picture_not_in_cache() {
+    public void should_store_profile_picture_identifier_when_user_profile_picture_not_in_cache() throws Exception {
         // Given
         final UserProfilePictures userProfilePictures = mock(UserProfilePictures.class);
         doReturn(true).when(userProfilePictures).canBeStoredInCache();
@@ -183,11 +190,13 @@ public class HazelcastUserProfilePicturesCacheRepositoryTest {
                                 .setMediaType(SupportedMediaType.IMAGE_JPEG)
                                 .setVersionId("v2").build())
                 .build();
-        assertThat(hazelcastInstance.getMap(HazelcastUserProfilePicturesCacheRepository.MAP_NAME).get("user")).isEqualTo(expectedHazelcastCachedUserProfilePicture);
+        assertThat(objectMapper.readValue(
+                (String) hazelcastInstance.getMap(HazelcastUserProfilePicturesCacheRepository.MAP_NAME).get("user"), HazelcastCachedUserProfilePictures.class))
+                .isEqualTo(expectedHazelcastCachedUserProfilePicture);
     }
 
     @Test
-    public void should_store_profile_picture_identifier_when_user_profile_picture_in_cache() {
+    public void should_store_profile_picture_identifier_when_user_profile_picture_in_cache() throws Exception {
         // Given
         final UserProfilePictures userProfilePictures = mock(UserProfilePictures.class);
         doReturn(true).when(userProfilePictures).canBeStoredInCache();
@@ -210,7 +219,8 @@ public class HazelcastUserProfilePicturesCacheRepositoryTest {
                                 .setMediaType(SupportedMediaType.IMAGE_JPEG)
                                 .setVersionId("v2").build())
                 .build();
-        hazelcastInstance.getMap(HazelcastUserProfilePicturesCacheRepository.MAP_NAME).put("user", givenHazelcastCachedUserProfilePicture);
+        hazelcastInstance.getMap(HazelcastUserProfilePicturesCacheRepository.MAP_NAME).put("user",
+                objectMapper.writeValueAsString(givenHazelcastCachedUserProfilePicture));
 
         // When
         hazelcastUserProfilePicturesCacheRepository.store(() -> "user", userProfilePictures);
@@ -224,11 +234,13 @@ public class HazelcastUserProfilePicturesCacheRepositoryTest {
                                 .setMediaType(SupportedMediaType.IMAGE_JPEG)
                                 .setVersionId("v0").build())
                 .build();
-        assertThat(hazelcastInstance.getMap(HazelcastUserProfilePicturesCacheRepository.MAP_NAME).get("user")).isEqualTo(expectedHazelcastCachedUserProfilePicture);
+        assertThat(objectMapper.readValue(
+                (String) hazelcastInstance.getMap(HazelcastUserProfilePicturesCacheRepository.MAP_NAME).get("user"), HazelcastCachedUserProfilePictures.class))
+                .isEqualTo(expectedHazelcastCachedUserProfilePicture);
     }
 
     @Test
-    public void should_evict_user_profile_pictures() {
+    public void should_evict_user_profile_pictures() throws Exception {
         // Given
         if (hazelcastInstance.getMap(HazelcastUserProfilePicturesCacheRepository.MAP_NAME).get("user") != null) {
             throw new IllegalStateException("must be null !");
@@ -236,7 +248,8 @@ public class HazelcastUserProfilePicturesCacheRepositoryTest {
         final CachedUserProfilePictures givenCachedUserProfilePictures = HazelcastCachedUserProfilePictures.newBuilder()
                 .setUserPseudo("user")
                 .build();
-        hazelcastInstance.getMap(HazelcastUserProfilePicturesCacheRepository.MAP_NAME).put("user", givenCachedUserProfilePictures);
+        hazelcastInstance.getMap(HazelcastUserProfilePicturesCacheRepository.MAP_NAME).put("user",
+                objectMapper.writeValueAsString(givenCachedUserProfilePictures));
 
         // When
         hazelcastUserProfilePicturesCacheRepository.evict(() -> "user");

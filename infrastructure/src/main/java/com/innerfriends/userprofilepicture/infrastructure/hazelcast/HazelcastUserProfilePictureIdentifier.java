@@ -4,11 +4,12 @@ import com.innerfriends.userprofilepicture.domain.SupportedMediaType;
 import com.innerfriends.userprofilepicture.domain.UserProfilePictureIdentifier;
 import com.innerfriends.userprofilepicture.domain.UserPseudo;
 import com.innerfriends.userprofilepicture.domain.VersionId;
+import io.quarkus.runtime.annotations.RegisterForReflection;
 
-import java.io.Serializable;
 import java.util.Objects;
 
-public final class HazelcastUserProfilePictureIdentifier implements UserProfilePictureIdentifier, Serializable {
+@RegisterForReflection
+public final class HazelcastUserProfilePictureIdentifier implements UserProfilePictureIdentifier {
 
     public String userPseudo;
     public SupportedMediaType mediaType;
