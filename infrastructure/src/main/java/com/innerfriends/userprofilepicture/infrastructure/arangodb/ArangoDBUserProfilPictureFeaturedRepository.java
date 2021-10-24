@@ -3,6 +3,7 @@ package com.innerfriends.userprofilepicture.infrastructure.arangodb;
 import com.arangodb.ArangoDB;
 import com.arangodb.ArangoDBException;
 import com.arangodb.ArangoDatabase;
+import com.arangodb.entity.BaseDocument;
 import com.arangodb.model.DocumentCreateOptions;
 import com.arangodb.model.OverwriteMode;
 import com.innerfriends.userprofilepicture.domain.UserProfilPictureFeaturedRepository;
@@ -20,6 +21,9 @@ import javax.enterprise.event.Observes;
 import java.util.Objects;
 import java.util.Optional;
 
+//===========================================================================
+// /!\ do not use Velocypack it does not seems to work in native mode !
+//===========================================================================
 @ApplicationScoped
 public class ArangoDBUserProfilPictureFeaturedRepository implements UserProfilPictureFeaturedRepository {
 
@@ -44,7 +48,8 @@ public class ArangoDBUserProfilPictureFeaturedRepository implements UserProfilPi
     @Override
     public Optional<UserProfilePictureIdentifier> getFeatured(final UserPseudo userPseudo) throws UserProfilPictureFeaturedRepositoryException {
         try {
-            return Optional.ofNullable(arangoDatabase.collection(COLLECTION_FEATURE).getDocument(userPseudo.pseudo(), ArangoDBProfilePictureIdentifier.class));
+            return Optional.ofNullable(arangoDatabase.collection(COLLECTION_FEATURE).getDocument(userPseudo.pseudo(), BaseDocument.class))
+                    .map(ArangoDBProfilePictureIdentifier::new);
         } catch (final ArangoDBException exception) {
             LOG.error(exception);
             throw new UserProfilPictureFeaturedRepositoryException();
@@ -55,8 +60,12 @@ public class ArangoDBUserProfilPictureFeaturedRepository implements UserProfilPi
     @Override
     public UserProfilePictureIdentifier markAsFeatured(final UserProfilePictureIdentifier userProfilePictureIdentifier) throws UserProfilPictureFeaturedRepositoryException {
         try {
+            final BaseDocument featured = new BaseDocument();
+            featured.setKey(userProfilePictureIdentifier.userPseudo().pseudo());
+            featured.addAttribute("mediaType", userProfilePictureIdentifier.mediaType().name());
+            featured.addAttribute("versionId", userProfilePictureIdentifier.versionId().version());
             arangoDatabase.collection(COLLECTION_FEATURE).insertDocument(
-                    new ArangoDBProfilePictureIdentifier(userProfilePictureIdentifier),
+                    featured,
                     new DocumentCreateOptions()
                             .waitForSync(true)
                             .overwriteMode(OverwriteMode.update));

@@ -1,6 +1,6 @@
 package com.innerfriends.userprofilepicture.infrastructure.arangodb;
 
-import com.arangodb.entity.DocumentField;
+import com.arangodb.entity.BaseDocument;
 import com.innerfriends.userprofilepicture.domain.SupportedMediaType;
 import com.innerfriends.userprofilepicture.domain.UserProfilePictureIdentifier;
 import com.innerfriends.userprofilepicture.domain.UserPseudo;
@@ -10,19 +10,16 @@ import java.util.Objects;
 
 public final class ArangoDBProfilePictureIdentifier implements UserProfilePictureIdentifier {
 
-    @DocumentField(DocumentField.Type.KEY)
     public String userPseudo;
 
     public SupportedMediaType mediaType;
 
     public String versionId;
 
-    public ArangoDBProfilePictureIdentifier() {}
-
-    public ArangoDBProfilePictureIdentifier(final UserProfilePictureIdentifier userProfilePictureIdentifier) {
-        this.userPseudo = userProfilePictureIdentifier.userPseudo().pseudo();
-        this.mediaType = userProfilePictureIdentifier.mediaType();
-        this.versionId = userProfilePictureIdentifier.versionId().version();
+    public ArangoDBProfilePictureIdentifier(final BaseDocument baseDocument) {
+        this.userPseudo = baseDocument.getKey();
+        this.mediaType = SupportedMediaType.valueOf((String) baseDocument.getAttribute("mediaType"));
+        this.versionId = (String) baseDocument.getAttribute("versionId");
     }
 
     @Override

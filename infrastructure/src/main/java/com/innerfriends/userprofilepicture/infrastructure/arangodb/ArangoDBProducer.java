@@ -1,7 +1,6 @@
 package com.innerfriends.userprofilepicture.infrastructure.arangodb;
 
 import com.arangodb.ArangoDB;
-import com.arangodb.mapping.ArangoJack;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -19,7 +18,6 @@ public class ArangoDBProducer {
                 .host(host, port)
                 .user(user)
                 .password(password)
-                .serializer(new ArangoJack())
                 .build();
     }
 
