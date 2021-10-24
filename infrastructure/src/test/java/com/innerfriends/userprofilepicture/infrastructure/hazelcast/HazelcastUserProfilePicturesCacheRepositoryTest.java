@@ -108,6 +108,14 @@ public class HazelcastUserProfilePicturesCacheRepositoryTest {
         // Given
         final CachedUserProfilePictures givenCachedUserProfilePictures = HazelcastCachedUserProfilePictures.newBuilder()
                 .withUserPseudo("user")
+                .withUserProfilePictures(
+                        Collections.singletonList(
+                                HazelcastUserProfilePicture.newBuilder()
+                                        .withUserPseudo("user")
+                                        .withMediaType(SupportedMediaType.IMAGE_JPEG)
+                                        .withVersionId("v0")
+                                        .withFeatured(true)
+                                        .build()))
                 .build();
         hazelcastInstance.getMap(HazelcastUserProfilePicturesCacheRepository.MAP_NAME).put("user",
                 objectMapper.writeValueAsString(givenCachedUserProfilePictures));

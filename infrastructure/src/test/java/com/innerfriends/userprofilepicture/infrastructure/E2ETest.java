@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
+import static org.hamcrest.Matchers.equalTo;
 
 @QuarkusTest
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -281,6 +282,19 @@ public class E2ETest {
 
     @Test
     @Order(5)
+    public void should_be_selected() {
+        given()
+                .header("Content-Type", "image/jpeg")
+                .when()
+                .get("/users/pseudoE2E")
+                .then()
+                .log().all()
+                .statusCode(200)
+                .body("featureState", equalTo("SELECTED"));
+    }
+
+    @Test
+    @Order(6)
     public void should_have_stored_Damdamdeo_picture() {
         final List<String> objectVersionsKey = s3Client.listObjectVersions(ListObjectVersionsRequest
                 .builder()

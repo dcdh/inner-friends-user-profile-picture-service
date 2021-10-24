@@ -19,7 +19,7 @@ public final class DomainUserProfilePicture implements UserProfilePicture {
 
     public DomainUserProfilePicture(final UserProfilePictureIdentifier userProfilePictureIdentifier,
                                     final UserProfilePictureIdentifier featured) {
-        this(userProfilePictureIdentifier, userProfilePictureIdentifier.equals(featured));
+        this(userProfilePictureIdentifier, userProfilePictureIdentifier.isEqual(featured));
     }
 
     @Override

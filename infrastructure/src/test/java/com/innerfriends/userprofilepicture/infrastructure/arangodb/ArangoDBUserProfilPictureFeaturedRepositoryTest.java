@@ -1,6 +1,7 @@
 package com.innerfriends.userprofilepicture.infrastructure.arangodb;
 
 import com.arangodb.ArangoDB;
+import com.arangodb.entity.BaseDocument;
 import com.innerfriends.userprofilepicture.domain.*;
 import com.innerfriends.userprofilepicture.infrastructure.opentelemetry.OpenTelemetryTracingService;
 import io.quarkus.test.junit.QuarkusTest;
@@ -71,6 +72,13 @@ public class ArangoDBUserProfilPictureFeaturedRepositoryTest {
         });
 
         // Then
+        final BaseDocument featured = arangoDB.db(dbName).collection(ArangoDBUserProfilPictureFeaturedRepository.COLLECTION_FEATURE)
+                .getDocument("pseudo", BaseDocument.class);
+        assertThat(featured).isNotNull();
+        assertThat(featured.getKey()).isEqualTo("pseudo");
+        assertThat(featured.getAttribute("mediaType")).isEqualTo("IMAGE_JPEG");
+        assertThat(featured.getAttribute("versionId")).isEqualTo("v0");
+
         assertThat(userProfilePictureIdentifier.userPseudo().pseudo()).isEqualTo("pseudo");
         assertThat(userProfilePictureIdentifier.mediaType()).isEqualTo(SupportedMediaType.IMAGE_JPEG);
         assertThat(userProfilePictureIdentifier.versionId().version()).isEqualTo("v0");
@@ -105,6 +113,13 @@ public class ArangoDBUserProfilPictureFeaturedRepositoryTest {
         });
 
         // Then
+        final BaseDocument featured = arangoDB.db(dbName).collection(ArangoDBUserProfilPictureFeaturedRepository.COLLECTION_FEATURE)
+                .getDocument("pseudo", BaseDocument.class);
+        assertThat(featured).isNotNull();
+        assertThat(featured.getKey()).isEqualTo("pseudo");
+        assertThat(featured.getAttribute("mediaType")).isEqualTo("IMAGE_JPEG");
+        assertThat(featured.getAttribute("versionId")).isEqualTo("v1");
+
         assertThat(userProfilePictureIdentifier.userPseudo().pseudo()).isEqualTo("pseudo");
         assertThat(userProfilePictureIdentifier.mediaType()).isEqualTo(SupportedMediaType.IMAGE_JPEG);
         assertThat(userProfilePictureIdentifier.versionId().version()).isEqualTo("v1");

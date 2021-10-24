@@ -100,7 +100,8 @@ public class HazelcastUserProfilePicturesCacheRepository implements UserProfileP
                 .map(String.class::cast)
                 .map(inCache -> readFromJson(inCache))
                 .map(inCache ->
-                        inCache.replaceFeaturedUserProfilePictureIdentifier(new HazelcastUserProfilePictureIdentifier(userProfilePicture))
+                        inCache.replaceUserProfilePictures(null)
+                                .replaceFeaturedUserProfilePictureIdentifier(new HazelcastUserProfilePictureIdentifier(userProfilePicture))
                                 .replaceFeatureState(FeatureState.SELECTED))
                 .orElseGet(() -> HazelcastCachedUserProfilePictures.newBuilder()
                         .withUserPseudo(userProfilePicture.userPseudo().pseudo())
