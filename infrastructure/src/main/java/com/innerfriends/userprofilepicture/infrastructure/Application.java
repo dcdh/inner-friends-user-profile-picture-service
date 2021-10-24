@@ -1,6 +1,7 @@
 package com.innerfriends.userprofilepicture.infrastructure;
 
 import com.innerfriends.userprofilepicture.domain.UserProfilPictureFeaturedRepository;
+import com.innerfriends.userprofilepicture.domain.UserProfilePictureDimensionValidator;
 import com.innerfriends.userprofilepicture.domain.UserProfilePictureRepository;
 import com.innerfriends.userprofilepicture.domain.usecase.*;
 import com.innerfriends.userprofilepicture.infrastructure.s3.S3ObjectKey;
@@ -13,8 +14,9 @@ public class Application {
 
     @Produces
     @ApplicationScoped
-    public StoreNewUserProfilePictureUseCase storeNewUserProfilePictureUseCaseProducer(final UserProfilePictureRepository userProfilePictureRepository) {
-        return new StoreNewUserProfilePictureUseCase(userProfilePictureRepository);
+    public StoreNewUserProfilePictureUseCase storeNewUserProfilePictureUseCaseProducer(final UserProfilePictureRepository userProfilePictureRepository,
+                                                                                       final UserProfilePictureDimensionValidator userProfilePictureDimensionValidator) {
+        return new StoreNewUserProfilePictureUseCase(userProfilePictureRepository, userProfilePictureDimensionValidator);
     }
 
     @Produces

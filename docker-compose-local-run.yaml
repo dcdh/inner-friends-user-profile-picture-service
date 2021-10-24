@@ -59,6 +59,8 @@ services:
       - quarkus.hazelcast-client.cluster-name=dev
       - quarkus.hazelcast-client.cluster-members=hazelcast:5701
       - quarkus.opentelemetry.tracer.exporter.otlp.endpoint=http://otel-collector:55680
+      - picture.maxHeight=768
+      - picture.maxWidth=1024
     depends_on:
       - zenko
       - arangodb

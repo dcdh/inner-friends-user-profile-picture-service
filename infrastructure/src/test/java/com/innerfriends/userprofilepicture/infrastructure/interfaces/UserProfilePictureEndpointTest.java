@@ -77,6 +77,62 @@ public class UserProfilePictureEndpointTest {
                 .statusCode(500);
     }
 
+    public static final class TestDimension implements Dimension {
+
+        private final Height height;
+        private final Width width;
+
+        public TestDimension(final Height height, final Width width) {
+            this.height = height;
+            this.width = width;
+        }
+
+        @Override
+        public Height height() {
+            return height;
+        }
+
+        @Override
+        public Width width() {
+            return width;
+        }
+    }
+
+    @Test
+    public void should_store_new_user_profile_picture_return_expected_response_when_invalid_dimension_exception() throws Exception {
+        // Given
+        doThrow(new InvalidDimensionException(
+                new TestDimension(new Height(1280), new Width(1024)),
+                new TestDimension(new Height(640), new Width(400)))).when(managedStoreNewUserProfilePictureUseCase).execute(any());
+
+        // When && Then
+        given()
+                .multiPart("picture", getFileFromResource("given/1px_white.jpg"))
+                .multiPart("supportedMediaType", "IMAGE_JPEG")
+                .when()
+                .post("/users/userPseudo/storeNewUserProfilePicture")
+                .then()
+                .log().all()
+                .statusCode(400)
+                .body(equalTo("Invalid Dimension - current height 1280, current width 1024 - max height 640, max width 400"));
+    }
+
+    @Test
+    public void should_store_new_user_profile_picture_return_expected_response_when_unable_to_process_picture_exception() throws Exception {
+        // Given
+        doThrow(new UnableToProcessPictureException()).when(managedStoreNewUserProfilePictureUseCase).execute(any());
+
+        // When && Then
+        given()
+                .multiPart("picture", getFileFromResource("given/1px_white.jpg"))
+                .multiPart("supportedMediaType", "IMAGE_JPEG")
+                .when()
+                .post("/users/userPseudo/storeNewUserProfilePicture")
+                .then()
+                .log().all()
+                .statusCode(400);
+    }
+
     public static final class TestContentUserProfilePicture implements ContentUserProfilePicture {
 
         @Override
