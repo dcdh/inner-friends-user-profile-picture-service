@@ -64,7 +64,7 @@ public class ManagedListUserProfilPicturesUseCaseTest {
         doReturn(userPseudo).when(listUserProfilPicturesCommand).userPseudo();
         final UserProfilePictures userProfilePictures = mock(UserProfilePictures.class);
         final CachedUserProfilePictures cachedUserProfilePictures = mock(CachedUserProfilePictures.class);
-        doReturn(false).when(cachedUserProfilePictures).hasUserProfilePictureIdentifiersInCache();
+        doReturn(false).when(cachedUserProfilePictures).hasUserProfilePictures();
         doReturn(Optional.of(cachedUserProfilePictures)).when(userProfilePicturesCacheRepository).get(userPseudo);
         doReturn(userProfilePictures).when(listUserProfilPicturesUseCase).execute(listUserProfilPicturesCommand);
         final InOrder inOrder = inOrder(listUserProfilPicturesUseCase, lockMechanism, userProfilePicturesCacheRepository);
@@ -85,7 +85,7 @@ public class ManagedListUserProfilPicturesUseCaseTest {
         final UserPseudo userPseudo = mock(UserPseudo.class);
         doReturn(userPseudo).when(listUserProfilPicturesCommand).userPseudo();
         final CachedUserProfilePictures cachedUserProfilePictures = mock(CachedUserProfilePictures.class);
-        doReturn(true).when(cachedUserProfilePictures).hasUserProfilePictureIdentifiersInCache();
+        doReturn(true).when(cachedUserProfilePictures).hasUserProfilePictures();
         doReturn(Optional.of(cachedUserProfilePictures)).when(userProfilePicturesCacheRepository).get(userPseudo);
         final InOrder inOrder = inOrder(listUserProfilPicturesUseCase, lockMechanism, userProfilePicturesCacheRepository);
 

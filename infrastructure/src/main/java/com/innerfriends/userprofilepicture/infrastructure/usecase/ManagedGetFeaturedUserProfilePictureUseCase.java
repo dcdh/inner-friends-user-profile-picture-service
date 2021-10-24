@@ -32,7 +32,7 @@ public class ManagedGetFeaturedUserProfilePictureUseCase implements UseCase<User
                 .map(UserProfilePicture.class::cast)
                 .orElseGet(() -> {
                     final UserProfilePicture userProfilePicture = getFeaturedUserProfilePictureUseCase.execute(command);
-                    userProfilePicturesCacheRepository.storeFeatured(command.userPseudo(), userProfilePicture);
+                    userProfilePicturesCacheRepository.storeFeatured(userProfilePicture);
                     return userProfilePicture;
                 });
     }

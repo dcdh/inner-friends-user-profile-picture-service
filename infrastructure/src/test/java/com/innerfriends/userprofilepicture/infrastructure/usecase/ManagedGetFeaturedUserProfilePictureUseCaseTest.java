@@ -53,7 +53,7 @@ public class ManagedGetFeaturedUserProfilePictureUseCaseTest {
         inOrder.verify(lockMechanism, times(1)).lock(userPseudo);
         inOrder.verify(userProfilePicturesCacheRepository, times(1)).get(userPseudo);
         inOrder.verify(getFeaturedUserProfilePictureUseCase, times(1)).execute(getFeaturedUserProfilePictureCommand);
-        inOrder.verify(userProfilePicturesCacheRepository, times(1)).storeFeatured(userPseudo, userProfilePicture);
+        inOrder.verify(userProfilePicturesCacheRepository, times(1)).storeFeatured(userProfilePicture);
         inOrder.verify(lockMechanism, times(1)).release(userPseudo);
     }
 
@@ -75,7 +75,7 @@ public class ManagedGetFeaturedUserProfilePictureUseCaseTest {
         inOrder.verify(lockMechanism, times(1)).lock(userPseudo);
         inOrder.verify(userProfilePicturesCacheRepository, times(1)).get(userPseudo);
         inOrder.verify(getFeaturedUserProfilePictureUseCase, times(1)).execute(getFeaturedUserProfilePictureCommand);
-        inOrder.verify(userProfilePicturesCacheRepository, times(1)).storeFeatured(userPseudo, userProfilePicture);
+        inOrder.verify(userProfilePicturesCacheRepository, times(1)).storeFeatured(userProfilePicture);
         inOrder.verify(lockMechanism, times(1)).release(userPseudo);
     }
 

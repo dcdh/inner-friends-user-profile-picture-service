@@ -5,8 +5,8 @@ import com.innerfriends.userprofilepicture.domain.UserProfilePictures;
 import com.innerfriends.userprofilepicture.domain.usecase.ListUserProfilPicturesCommand;
 import com.innerfriends.userprofilepicture.domain.usecase.ListUserProfilPicturesUseCase;
 import com.innerfriends.userprofilepicture.infrastructure.usecase.cache.CachedUserProfilePictures;
-import com.innerfriends.userprofilepicture.infrastructure.usecase.lock.SingleInstanceUseCaseExecution;
 import com.innerfriends.userprofilepicture.infrastructure.usecase.cache.UserProfilePicturesCacheRepository;
+import com.innerfriends.userprofilepicture.infrastructure.usecase.lock.SingleInstanceUseCaseExecution;
 
 import javax.enterprise.context.ApplicationScoped;
 import java.util.Objects;
@@ -27,7 +27,7 @@ public class ManagedListUserProfilPicturesUseCase implements UseCase<UserProfile
     @Override
     public UserProfilePictures execute(final ListUserProfilPicturesCommand command) {
         return userProfilePicturesCacheRepository.get(command.userPseudo())
-                .filter(CachedUserProfilePictures::hasUserProfilePictureIdentifiersInCache)
+                .filter(CachedUserProfilePictures::hasUserProfilePictures)
                 .map(UserProfilePictures.class::cast)
                 .orElseGet(() -> {
                     final UserProfilePictures userProfilePictures = listUserProfilPicturesUseCase.execute(command);

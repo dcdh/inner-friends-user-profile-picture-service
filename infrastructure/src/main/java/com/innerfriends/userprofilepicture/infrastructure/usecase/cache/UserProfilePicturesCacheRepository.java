@@ -1,6 +1,6 @@
 package com.innerfriends.userprofilepicture.infrastructure.usecase.cache;
 
-import com.innerfriends.userprofilepicture.domain.UserProfilePictureIdentifier;
+import com.innerfriends.userprofilepicture.domain.UserProfilePicture;
 import com.innerfriends.userprofilepicture.domain.UserProfilePictures;
 import com.innerfriends.userprofilepicture.domain.UserPseudo;
 
@@ -12,7 +12,7 @@ public interface UserProfilePicturesCacheRepository {
 
     void store(UserPseudo userPseudo, UserProfilePictures userProfilePictures);
 
-    void storeFeatured(UserPseudo userPseudo, UserProfilePictureIdentifier featured);
+    void storeFeatured(UserProfilePicture featured);
 
     void evict(UserPseudo userPseudo);
 

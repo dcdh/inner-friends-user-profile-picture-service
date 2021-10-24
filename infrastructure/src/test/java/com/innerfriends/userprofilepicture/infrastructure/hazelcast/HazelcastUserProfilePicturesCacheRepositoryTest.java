@@ -14,9 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import javax.inject.Inject;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -48,17 +46,21 @@ public class HazelcastUserProfilePicturesCacheRepositoryTest {
     public void should_get_return_stored_cached_user_profile_picture() throws Exception {
         // Given
         final CachedUserProfilePictures givenCachedUserProfilePictures = HazelcastCachedUserProfilePictures.newBuilder()
-                .setUserPseudo("user")
-                .setFeaturedUserProfilePictureIdentifier(
+                .withUserPseudo("user")
+                .withFeaturedUserProfilePictureIdentifier(
                         HazelcastUserProfilePictureIdentifier.newBuilder()
-                                .setUserPseudo("user")
-                                .setMediaType(SupportedMediaType.IMAGE_JPEG)
-                                .setVersionId("v0").build())
-                .addProfilePictureIdentifier(
-                        HazelcastUserProfilePictureIdentifier.newBuilder()
-                                .setUserPseudo("user")
-                                .setMediaType(SupportedMediaType.IMAGE_JPEG)
-                                .setVersionId("v0").build())
+                                .withUserPseudo("user")
+                                .withMediaType(SupportedMediaType.IMAGE_JPEG)
+                                .withVersionId("v0").build())
+                .withUserProfilePictures(
+                        Collections.singletonList(
+                                HazelcastUserProfilePicture.newBuilder()
+                                        .withUserPseudo("user")
+                                        .withMediaType(SupportedMediaType.IMAGE_JPEG)
+                                        .withVersionId("v0")
+                                        .withFeatured(true)
+                                        .build()))
+                .withFeatureState(FeatureState.SELECTED)
                 .build();
         hazelcastInstance.getMap(HazelcastUserProfilePicturesCacheRepository.MAP_NAME).put("user",
                 objectMapper.writeValueAsString(givenCachedUserProfilePictures));
@@ -69,17 +71,21 @@ public class HazelcastUserProfilePicturesCacheRepositoryTest {
         // Then
         assertThat(cachedUserProfilePictures.isPresent()).isTrue();
         assertThat(cachedUserProfilePictures.get()).isEqualTo(HazelcastCachedUserProfilePictures.newBuilder()
-                .setUserPseudo("user")
-                .setFeaturedUserProfilePictureIdentifier(
+                .withUserPseudo("user")
+                .withFeaturedUserProfilePictureIdentifier(
                         HazelcastUserProfilePictureIdentifier.newBuilder()
-                                .setUserPseudo("user")
-                                .setMediaType(SupportedMediaType.IMAGE_JPEG)
-                                .setVersionId("v0").build())
-                .addProfilePictureIdentifier(
-                        HazelcastUserProfilePictureIdentifier.newBuilder()
-                                .setUserPseudo("user")
-                                .setMediaType(SupportedMediaType.IMAGE_JPEG)
-                                .setVersionId("v0").build())
+                                .withUserPseudo("user")
+                                .withMediaType(SupportedMediaType.IMAGE_JPEG)
+                                .withVersionId("v0").build())
+                .withUserProfilePictures(
+                        Collections.singletonList(
+                                HazelcastUserProfilePicture.newBuilder()
+                                        .withUserPseudo("user")
+                                        .withMediaType(SupportedMediaType.IMAGE_JPEG)
+                                        .withVersionId("v0")
+                                        .withFeatured(true)
+                                        .build()))
+                .withFeatureState(FeatureState.SELECTED)
                 .build());
         verify(openTelemetryTracingService, times(1)).startANewSpan(any());
         verify(openTelemetryTracingService, times(1)).endSpan(any());
@@ -101,26 +107,29 @@ public class HazelcastUserProfilePicturesCacheRepositoryTest {
     public void should_store_featured_profile_picture_when_user_profile_picture_in_cache() throws Exception {
         // Given
         final CachedUserProfilePictures givenCachedUserProfilePictures = HazelcastCachedUserProfilePictures.newBuilder()
-                .setUserPseudo("user")
+                .withUserPseudo("user")
                 .build();
         hazelcastInstance.getMap(HazelcastUserProfilePicturesCacheRepository.MAP_NAME).put("user",
                 objectMapper.writeValueAsString(givenCachedUserProfilePictures));
 
         // When
-        hazelcastUserProfilePicturesCacheRepository.storeFeatured(() -> "user",
-                HazelcastUserProfilePictureIdentifier.newBuilder()
-                        .setUserPseudo("user")
-                        .setMediaType(SupportedMediaType.IMAGE_JPEG)
-                        .setVersionId("v0").build());
+        hazelcastUserProfilePicturesCacheRepository.storeFeatured(
+                HazelcastUserProfilePicture.newBuilder()
+                        .withUserPseudo("user")
+                        .withMediaType(SupportedMediaType.IMAGE_JPEG)
+                        .withVersionId("v0")
+                        .withFeatured(true)
+                        .build());
 
         // Then
         final HazelcastCachedUserProfilePictures expectedHazelcastCachedUserProfilePicture = HazelcastCachedUserProfilePictures.newBuilder()
-                .setUserPseudo("user")
-                .setFeaturedUserProfilePictureIdentifier(
+                .withUserPseudo("user")
+                .withFeaturedUserProfilePictureIdentifier(
                         HazelcastUserProfilePictureIdentifier.newBuilder()
-                                .setUserPseudo("user")
-                                .setMediaType(SupportedMediaType.IMAGE_JPEG)
-                                .setVersionId("v0").build())
+                                .withUserPseudo("user")
+                                .withMediaType(SupportedMediaType.IMAGE_JPEG)
+                                .withVersionId("v0").build())
+                .withFeatureState(FeatureState.SELECTED)
                 .build();
 
         assertThat(objectMapper.readValue(
@@ -135,20 +144,23 @@ public class HazelcastUserProfilePicturesCacheRepositoryTest {
         // Given
 
         // When
-        hazelcastUserProfilePicturesCacheRepository.storeFeatured(() -> "user",
-                HazelcastUserProfilePictureIdentifier.newBuilder()
-                        .setUserPseudo("user")
-                        .setMediaType(SupportedMediaType.IMAGE_JPEG)
-                        .setVersionId("v0").build());
+        hazelcastUserProfilePicturesCacheRepository.storeFeatured(
+                HazelcastUserProfilePicture.newBuilder()
+                        .withUserPseudo("user")
+                        .withMediaType(SupportedMediaType.IMAGE_JPEG)
+                        .withVersionId("v0")
+                        .withFeatured(true)
+                        .build());
 
         // Then
         final HazelcastCachedUserProfilePictures expectedHazelcastCachedUserProfilePicture = HazelcastCachedUserProfilePictures.newBuilder()
-                .setUserPseudo("user")
-                .setFeaturedUserProfilePictureIdentifier(
+                .withUserPseudo("user")
+                .withFeaturedUserProfilePictureIdentifier(
                         HazelcastUserProfilePictureIdentifier.newBuilder()
-                                .setUserPseudo("user")
-                                .setMediaType(SupportedMediaType.IMAGE_JPEG)
-                                .setVersionId("v0").build())
+                                .withUserPseudo("user")
+                                .withMediaType(SupportedMediaType.IMAGE_JPEG)
+                                .withVersionId("v0").build())
+                .withFeatureState(FeatureState.SELECTED)
                 .build();
 
         assertThat(objectMapper.readValue(
@@ -176,28 +188,41 @@ public class HazelcastUserProfilePicturesCacheRepositoryTest {
         final UserProfilePictures userProfilePictures = mock(UserProfilePictures.class);
         doReturn(true).when(userProfilePictures).canBeStoredInCache();
         doReturn(buildUserProfilePicture(3)).when(userProfilePictures).userProfilePictures();
+        doReturn(FeatureState.SELECTED).when(userProfilePictures).featureState();
 
         // When
         hazelcastUserProfilePicturesCacheRepository.store(() -> "user", userProfilePictures);
 
         // Then
         final HazelcastCachedUserProfilePictures expectedHazelcastCachedUserProfilePicture = HazelcastCachedUserProfilePictures.newBuilder()
-                .setUserPseudo("user")
-                .addProfilePictureIdentifier(
+                .withUserPseudo("user")
+                .withUserProfilePictures(
+                        Arrays.asList(
+                                HazelcastUserProfilePicture.newBuilder()
+                                        .withUserPseudo("user")
+                                        .withMediaType(SupportedMediaType.IMAGE_JPEG)
+                                        .withVersionId("v0")
+                                        .withFeatured(true)
+                                        .build(),
+                                HazelcastUserProfilePicture.newBuilder()
+                                        .withUserPseudo("user")
+                                        .withMediaType(SupportedMediaType.IMAGE_JPEG)
+                                        .withVersionId("v1")
+                                        .withFeatured(false)
+                                        .build(),
+                                HazelcastUserProfilePicture.newBuilder()
+                                        .withUserPseudo("user")
+                                        .withMediaType(SupportedMediaType.IMAGE_JPEG)
+                                        .withVersionId("v2")
+                                        .withFeatured(false)
+                                        .build()))
+                .withFeaturedUserProfilePictureIdentifier(
                         HazelcastUserProfilePictureIdentifier.newBuilder()
-                                .setUserPseudo("user")
-                                .setMediaType(SupportedMediaType.IMAGE_JPEG)
-                                .setVersionId("v0").build())
-                .addProfilePictureIdentifier(
-                        HazelcastUserProfilePictureIdentifier.newBuilder()
-                                .setUserPseudo("user")
-                                .setMediaType(SupportedMediaType.IMAGE_JPEG)
-                                .setVersionId("v1").build())
-                .addProfilePictureIdentifier(
-                        HazelcastUserProfilePictureIdentifier.newBuilder()
-                                .setUserPseudo("user")
-                                .setMediaType(SupportedMediaType.IMAGE_JPEG)
-                                .setVersionId("v2").build())
+                                .withUserPseudo("user")
+                                .withMediaType(SupportedMediaType.IMAGE_JPEG)
+                                .withVersionId("v0")
+                                .build())
+                .withFeatureState(FeatureState.SELECTED)
                 .build();
         assertThat(objectMapper.readValue(
                 (String) hazelcastInstance.getMap(HazelcastUserProfilePicturesCacheRepository.MAP_NAME).get("user"), HazelcastCachedUserProfilePictures.class))
@@ -210,23 +235,36 @@ public class HazelcastUserProfilePicturesCacheRepositoryTest {
         final UserProfilePictures userProfilePictures = mock(UserProfilePictures.class);
         doReturn(true).when(userProfilePictures).canBeStoredInCache();
         doReturn(buildUserProfilePicture(1)).when(userProfilePictures).userProfilePictures();
+        doReturn(FeatureState.SELECTED).when(userProfilePictures).featureState();
         final HazelcastCachedUserProfilePictures givenHazelcastCachedUserProfilePicture = HazelcastCachedUserProfilePictures.newBuilder()
-                .setUserPseudo("user")
-                .addProfilePictureIdentifier(
+                .withUserPseudo("user")
+                .withUserProfilePictures(
+                        Arrays.asList(
+                                HazelcastUserProfilePicture.newBuilder()
+                                        .withUserPseudo("user")
+                                        .withMediaType(SupportedMediaType.IMAGE_JPEG)
+                                        .withVersionId("v0")
+                                        .withFeatured(true)
+                                        .build(),
+                                HazelcastUserProfilePicture.newBuilder()
+                                        .withUserPseudo("user")
+                                        .withMediaType(SupportedMediaType.IMAGE_JPEG)
+                                        .withVersionId("v1")
+                                        .withFeatured(false)
+                                        .build(),
+                                HazelcastUserProfilePicture.newBuilder()
+                                        .withUserPseudo("user")
+                                        .withMediaType(SupportedMediaType.IMAGE_JPEG)
+                                        .withVersionId("v2")
+                                        .withFeatured(false)
+                                        .build()))
+                .withFeaturedUserProfilePictureIdentifier(
                         HazelcastUserProfilePictureIdentifier.newBuilder()
-                                .setUserPseudo("user")
-                                .setMediaType(SupportedMediaType.IMAGE_JPEG)
-                                .setVersionId("v0").build())
-                .addProfilePictureIdentifier(
-                        HazelcastUserProfilePictureIdentifier.newBuilder()
-                                .setUserPseudo("user")
-                                .setMediaType(SupportedMediaType.IMAGE_JPEG)
-                                .setVersionId("v1").build())
-                .addProfilePictureIdentifier(
-                        HazelcastUserProfilePictureIdentifier.newBuilder()
-                                .setUserPseudo("user")
-                                .setMediaType(SupportedMediaType.IMAGE_JPEG)
-                                .setVersionId("v2").build())
+                                .withUserPseudo("user")
+                                .withMediaType(SupportedMediaType.IMAGE_JPEG)
+                                .withVersionId("v0")
+                                .build())
+                .withFeatureState(FeatureState.SELECTED)
                 .build();
         hazelcastInstance.getMap(HazelcastUserProfilePicturesCacheRepository.MAP_NAME).put("user",
                 objectMapper.writeValueAsString(givenHazelcastCachedUserProfilePicture));
@@ -236,12 +274,22 @@ public class HazelcastUserProfilePicturesCacheRepositoryTest {
 
         // Then
         final HazelcastCachedUserProfilePictures expectedHazelcastCachedUserProfilePicture = HazelcastCachedUserProfilePictures.newBuilder()
-                .setUserPseudo("user")
-                .addProfilePictureIdentifier(
+                .withUserPseudo("user")
+                .withUserProfilePictures(
+                        Collections.singletonList(
+                                HazelcastUserProfilePicture.newBuilder()
+                                        .withUserPseudo("user")
+                                        .withMediaType(SupportedMediaType.IMAGE_JPEG)
+                                        .withVersionId("v0")
+                                        .withFeatured(true)
+                                        .build()))
+                .withFeaturedUserProfilePictureIdentifier(
                         HazelcastUserProfilePictureIdentifier.newBuilder()
-                                .setUserPseudo("user")
-                                .setMediaType(SupportedMediaType.IMAGE_JPEG)
-                                .setVersionId("v0").build())
+                                .withUserPseudo("user")
+                                .withMediaType(SupportedMediaType.IMAGE_JPEG)
+                                .withVersionId("v0")
+                                .build())
+                .withFeatureState(FeatureState.SELECTED)
                 .build();
         assertThat(objectMapper.readValue(
                 (String) hazelcastInstance.getMap(HazelcastUserProfilePicturesCacheRepository.MAP_NAME).get("user"), HazelcastCachedUserProfilePictures.class))
@@ -255,7 +303,7 @@ public class HazelcastUserProfilePicturesCacheRepositoryTest {
             throw new IllegalStateException("must be null !");
         }
         final CachedUserProfilePictures givenCachedUserProfilePictures = HazelcastCachedUserProfilePictures.newBuilder()
-                .setUserPseudo("user")
+                .withUserPseudo("user")
                 .build();
         hazelcastInstance.getMap(HazelcastUserProfilePicturesCacheRepository.MAP_NAME).put("user",
                 objectMapper.writeValueAsString(givenCachedUserProfilePictures));
@@ -272,7 +320,8 @@ public class HazelcastUserProfilePicturesCacheRepositoryTest {
     private List<UserProfilePicture> buildUserProfilePicture(final int nbOfPictures) {
         return IntStream.range(0, nbOfPictures)
                 .boxed()
-                .map(index -> new TestUserProfilePictureIdentifier("v" + index))
+                .map(index -> new TestUserProfilePictureIdentifier("v" + index,
+                        index == 0 ? true : false))
                 .collect(Collectors.toList());
     }
 
@@ -306,9 +355,11 @@ public class HazelcastUserProfilePicturesCacheRepositoryTest {
     private final class TestUserProfilePictureIdentifier implements UserProfilePicture {
 
         private final VersionId versionId;
+        private final boolean featured;
 
-        public TestUserProfilePictureIdentifier(final String versionId) {
+        public TestUserProfilePictureIdentifier(final String versionId, final boolean featured) {
             this.versionId = new TestVersionId(versionId);
+            this.featured = featured;
         }
 
         @Override
@@ -328,7 +379,7 @@ public class HazelcastUserProfilePicturesCacheRepositoryTest {
 
         @Override
         public boolean isFeatured() {
-            return false;
+            return featured;
         }
 
         @Override

@@ -8,10 +8,4 @@ public interface UserProfilePictureIdentifier {
 
     VersionId versionId();
 
-    default boolean isEqual(final UserProfilePictureIdentifier other) {
-        return other.userPseudo().pseudo().equals(userPseudo().pseudo())
-                && other.mediaType().equals(mediaType())
-                && other.versionId().version().equals(versionId().version());
-    }
-
 }

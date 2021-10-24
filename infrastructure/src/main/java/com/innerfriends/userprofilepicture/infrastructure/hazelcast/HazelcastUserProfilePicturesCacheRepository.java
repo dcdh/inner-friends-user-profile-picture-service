@@ -3,7 +3,8 @@ package com.innerfriends.userprofilepicture.infrastructure.hazelcast;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hazelcast.core.HazelcastInstance;
-import com.innerfriends.userprofilepicture.domain.UserProfilePictureIdentifier;
+import com.innerfriends.userprofilepicture.domain.FeatureState;
+import com.innerfriends.userprofilepicture.domain.UserProfilePicture;
 import com.innerfriends.userprofilepicture.domain.UserProfilePictures;
 import com.innerfriends.userprofilepicture.domain.UserPseudo;
 import com.innerfriends.userprofilepicture.infrastructure.opentelemetry.NewSpan;
@@ -44,12 +45,49 @@ public class HazelcastUserProfilePicturesCacheRepository implements UserProfileP
         if (userProfilePictures.canBeStoredInCache()) {
             final HazelcastCachedUserProfilePictures hazelcastCachedUserProfilePictures = Optional.ofNullable(hazelcastInstance.getMap(MAP_NAME).get(userPseudo.pseudo()))
                     .map(String.class::cast)
-                    .map(value -> readFromJson(value))
-                    .orElseGet(() -> HazelcastCachedUserProfilePictures.newBuilder().setUserPseudo(userPseudo.pseudo()).build())
-                    .replaceAllProfilePictureIdentifiers(
-                            userProfilePictures.userProfilePictures().stream()
-                                    .map(HazelcastUserProfilePictureIdentifier::new)
-                                    .collect(Collectors.toList()));
+                    .map(inCache -> readFromJson(inCache))
+                    .map(inCache ->
+                            inCache.replaceUserProfilePictures(
+                                    userProfilePictures.userProfilePictures()
+                                            .stream()
+                                            .map(userProfilePicture -> HazelcastUserProfilePicture
+                                                    .newBuilder()
+                                                    .withUserPseudo(userProfilePicture.userPseudo().pseudo())
+                                                    .withMediaType(userProfilePicture.mediaType())
+                                                    .withVersionId(userProfilePicture.versionId().version())
+                                                    .withFeatured(userProfilePicture.isFeatured())
+                                                    .build())
+                                            .collect(Collectors.toList()))
+                                    .replaceFeaturedUserProfilePictureIdentifier(
+                                            userProfilePictures.userProfilePictures()
+                                                    .stream()
+                                                    .filter(UserProfilePicture::isFeatured)
+                                                    .map(HazelcastUserProfilePictureIdentifier::new)
+                                                    .findFirst()
+                                                    .orElseThrow(() -> new IllegalStateException("Must have one featured")))
+                                    .replaceFeatureState(userProfilePictures.featureState()))
+                    .orElseGet(() -> HazelcastCachedUserProfilePictures.newBuilder()
+                            .withUserPseudo(userPseudo.pseudo())
+                            .withUserProfilePictures(
+                                    userProfilePictures.userProfilePictures()
+                                            .stream()
+                                            .map(userProfilePicture -> HazelcastUserProfilePicture
+                                                    .newBuilder()
+                                                    .withUserPseudo(userProfilePicture.userPseudo().pseudo())
+                                                    .withMediaType(userProfilePicture.mediaType())
+                                                    .withVersionId(userProfilePicture.versionId().version())
+                                                    .withFeatured(userProfilePicture.isFeatured())
+                                                    .build())
+                                            .collect(Collectors.toList()))
+                            .withFeaturedUserProfilePictureIdentifier(
+                                    userProfilePictures.userProfilePictures()
+                                            .stream()
+                                            .filter(UserProfilePicture::isFeatured)
+                                            .map(HazelcastUserProfilePictureIdentifier::new)
+                                            .findFirst()
+                                            .orElseThrow(() -> new IllegalStateException("Must have one featured")))
+                            .withFeatureState(userProfilePictures.featureState())
+                            .build());
             hazelcastInstance.getMap(MAP_NAME).put(userPseudo.pseudo(),
                     writeFrom(hazelcastCachedUserProfilePictures));
         }
@@ -57,13 +95,19 @@ public class HazelcastUserProfilePicturesCacheRepository implements UserProfileP
 
     @NewSpan
     @Override
-    public void storeFeatured(final UserPseudo userPseudo, final UserProfilePictureIdentifier featured) {
-        final HazelcastCachedUserProfilePictures hazelcastCachedUserProfilePictures = Optional.ofNullable(hazelcastInstance.getMap(MAP_NAME).get(userPseudo.pseudo()))
+    public void storeFeatured(final UserProfilePicture userProfilePicture) {
+        final HazelcastCachedUserProfilePictures hazelcastCachedUserProfilePictures = Optional.ofNullable(hazelcastInstance.getMap(MAP_NAME).get(userProfilePicture.userPseudo().pseudo()))
                 .map(String.class::cast)
-                .map(value -> readFromJson(value))
-                .orElseGet(() -> HazelcastCachedUserProfilePictures.newBuilder().setUserPseudo(userPseudo.pseudo()).build())
-                .setFeaturedUserProfilePictureIdentifier(new HazelcastUserProfilePictureIdentifier(featured));
-        hazelcastInstance.getMap(MAP_NAME).put(userPseudo.pseudo(),
+                .map(inCache -> readFromJson(inCache))
+                .map(inCache ->
+                        inCache.replaceFeaturedUserProfilePictureIdentifier(new HazelcastUserProfilePictureIdentifier(userProfilePicture))
+                                .replaceFeatureState(FeatureState.SELECTED))
+                .orElseGet(() -> HazelcastCachedUserProfilePictures.newBuilder()
+                        .withUserPseudo(userProfilePicture.userPseudo().pseudo())
+                        .withFeaturedUserProfilePictureIdentifier(new HazelcastUserProfilePictureIdentifier(userProfilePicture))
+                        .withFeatureState(FeatureState.SELECTED)
+                        .build());
+        hazelcastInstance.getMap(MAP_NAME).put(userProfilePicture.userPseudo().pseudo(),
                 writeFrom(hazelcastCachedUserProfilePictures));
     }
 

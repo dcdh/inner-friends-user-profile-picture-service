@@ -41,17 +41,17 @@ public final class HazelcastUserProfilePictureIdentifier implements UserProfileP
 
         private Builder() {}
 
-        public Builder setUserPseudo(String userPseudo) {
+        public Builder withUserPseudo(final String userPseudo) {
             this.userPseudo = userPseudo;
             return this;
         }
 
-        public Builder setMediaType(SupportedMediaType mediaType) {
+        public Builder withMediaType(final SupportedMediaType mediaType) {
             this.mediaType = mediaType;
             return this;
         }
 
-        public Builder setVersionId(String versionId) {
+        public Builder withVersionId(final String versionId) {
             this.versionId = versionId;
             return this;
         }

@@ -179,23 +179,35 @@ public class E2ETest {
     @Test
     @Order(2)
     public void should_list_user_profile_pictures() throws Exception {
-        given()
+        final String firstCallResponse = given()
                 .header("Content-Type", "image/jpeg")
                 .when()
                 .get("/users/pseudoE2E")
                 .then()
-                .statusCode(200);
+                .log().all()
+                .statusCode(200)
+                .extract().response().body().print();
         assertThat(hazelcastInstance.getMap(HazelcastUserProfilePicturesCacheRepository.MAP_NAME).get("pseudoE2E")).isNotNull();
-        final Traces traces = getTraces("/users/pseudoE2E");
-        assertThat(traces.getOperationNames()).containsExactlyInAnyOrder("users/{userPseudo}",
+        final Traces firstTraces = getTraces("/users/pseudoE2E");
+        assertThat(firstTraces.getOperationNames()).containsExactlyInAnyOrder("users/{userPseudo}",
                 "HazelcastLockMechanism:lock",
                 "HazelcastUserProfilePicturesCacheRepository:get",
                 "S3UserProfilePictureRepository:listByUserPseudoAndMediaType",
                 "ArangoDBUserProfilPictureFeaturedRepository:getFeatured",
                 "HazelcastUserProfilePicturesCacheRepository:store",
                 "HazelcastLockMechanism:release");
-        assertThat(traces.getHttpStatus()).containsExactlyInAnyOrder(200);
-        assertThat(traces.getOperationNamesInError()).isEmpty();
+        assertThat(firstTraces.getHttpStatus()).containsExactlyInAnyOrder(200);
+        assertThat(firstTraces.getOperationNamesInError()).isEmpty();
+        // second call to check cache issue or not
+        final String secondCallResponse = given()
+                .header("Content-Type", "image/jpeg")
+                .when()
+                .get("/users/pseudoE2E")
+                .then()
+                .log().all()
+                .statusCode(200)
+                .extract().response().body().print();
+        assertThat(secondCallResponse).isEqualTo(firstCallResponse);
     }
 
     @Test
@@ -226,6 +238,31 @@ public class E2ETest {
     @Test
     @Order(4)
     public void should_get_featured_user_profile_picture() throws Exception {
+        final String firstCallResponse = given()
+                .contentType("image/jpeg; charset=ISO-8859-1")
+                .when()
+                .get("/users/pseudoE2E/featured")
+                .then()
+                .statusCode(200)
+                .extract().response().body().print();
+        final Traces firstTraces = getTraces("/users/pseudoE2E/featured");
+        assertThat(firstTraces.getOperationNames()).containsExactlyInAnyOrder("users/{userPseudo}/featured",
+                "HazelcastLockMechanism:lock",
+                "HazelcastUserProfilePicturesCacheRepository:get",
+                "ArangoDBUserProfilPictureFeaturedRepository:getFeatured",
+                "HazelcastUserProfilePicturesCacheRepository:storeFeatured",
+                "HazelcastLockMechanism:release");
+        assertThat(firstTraces.getHttpStatus()).containsExactlyInAnyOrder(200);
+        assertThat(firstTraces.getOperationNamesInError()).isEmpty();
+        final String secondCallResponse = given()
+                .contentType("image/jpeg; charset=ISO-8859-1")
+                .when()
+                .get("/users/pseudoE2E/featured")
+                .then()
+                .statusCode(200)
+                .extract().response().body().print();
+        assertThat(firstCallResponse).isEqualTo(secondCallResponse);
+
         final List<ObjectVersion> objectVersions = s3Client.listObjectVersions(ListObjectVersionsRequest
                 .builder()
                 .bucket(bucketUserProfilePictureName)
@@ -240,15 +277,6 @@ public class E2ETest {
                 .extract().path("versionId");
         assertThat(versionId).isEqualTo(objectVersions.get(0).versionId());
         assertThat(hazelcastInstance.getMap(HazelcastUserProfilePicturesCacheRepository.MAP_NAME).get("pseudoE2E")).isNotNull();
-        final Traces traces = getTraces("/users/pseudoE2E/featured");
-        assertThat(traces.getOperationNames()).containsExactlyInAnyOrder("users/{userPseudo}/featured",
-                "HazelcastLockMechanism:lock",
-                "HazelcastUserProfilePicturesCacheRepository:get",
-                "ArangoDBUserProfilPictureFeaturedRepository:getFeatured",
-                "HazelcastUserProfilePicturesCacheRepository:storeFeatured",
-                "HazelcastLockMechanism:release");
-        assertThat(traces.getHttpStatus()).containsExactlyInAnyOrder(200);
-        assertThat(traces.getOperationNamesInError()).isEmpty();
     }
 
     @Test
